@@ -10,12 +10,7 @@
 <body class="tv-page">
   <nav class="tv-navbar">
     <a href="{% url 'home:landing' %}" class="tv-brand" aria-label="T-Vault home">
-      <span class="tv-logo" aria-hidden="true">
-        <svg viewBox="0 0 40 40">
-          <path d="M20 4 33 11.2v9.9c0 7.7-5.2 12.6-13 14.9-7.8-2.3-13-7.2-13-14.9v-9.9L20 4Z"/>
-          <path d="M14.5 20.5h11M20 15v11M15.3 26.2 24.7 16.8"/>
-        </svg>
-      </span>
+      <img src="{% static 'images/logo.jpg' %}" alt="TAP-DEV Logo" style="width:40px;height:40px;border-radius:8px;object-fit:cover;margin-right:12px;">
       <span>T-Vault</span>
     </a>
 
@@ -112,12 +107,7 @@
   <footer class="tv-footer">
     <div>
       <a href="{% url 'home:landing' %}" class="tv-brand">
-        <span class="tv-logo" aria-hidden="true">
-          <svg viewBox="0 0 40 40">
-            <path d="M20 4 33 11.2v9.9c0 7.7-5.2 12.6-13 14.9-7.8-2.3-13-7.2-13-14.9v-9.9L20 4Z"/>
-            <path d="M14.5 20.5h11M20 15v11M15.3 26.2 24.7 16.8"/>
-          </svg>
-        </span>
+        <img src="{% static 'images/logo.jpg' %}" alt="TAP-DEV Logo" style="width:40px;height:40px;border-radius:8px;object-fit:cover;margin-right:12px;">
         <span>T-Vault</span>
       </a>
       <p>Temporal Attack-Proof Vault for blockchain-secured cyber defense.</p>

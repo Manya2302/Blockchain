@@ -9,7 +9,10 @@
 </head>
 <body class="tv-page">
   <nav class="tv-navbar">
-    <a href="{% url 'home:landing' %}" class="tv-brand"><span class="tv-logo">TV</span><span>T-Vault</span></a>
+    <a href="{% url 'home:landing' %}" class="tv-brand">
+      <img src="{% static 'images/logo.jpg' %}" alt="TAP-DEV Logo" style="width:32px;height:32px;border-radius:6px;object-fit:cover;margin-right:8px;vertical-align:middle;">
+      <span>T-Vault</span>
+    </a>
     <div class="tv-navlinks">
       <a href="{% url 'home:landing' %}">Home</a>
       <a href="{% url 'home:about' %}">About</a>
@@ -33,7 +36,13 @@
     </section>
   </main>
   <footer class="tv-footer">
-    <div><a href="{% url 'home:landing' %}" class="tv-brand"><span class="tv-logo">TV</span><span>T-Vault</span></a><p>Blockchain-secured temporal cyber defense.</p></div>
+    <div>
+      <a href="{% url 'home:landing' %}" class="tv-brand">
+        <img src="{% static 'images/logo.jpg' %}" alt="TAP-DEV Logo" style="width:32px;height:32px;border-radius:6px;object-fit:cover;margin-right:8px;vertical-align:middle;">
+        <span>T-Vault</span>
+      </a>
+      <p>Blockchain-secured temporal cyber defense.</p>
+    </div>
     <div class="footer-links"><a href="{% url 'home:about' %}">About</a><a href="{% url 'home:faq' %}">FAQ</a><a href="{% url 'home:contact' %}">Contact</a><a href="{% url 'users:login' %}">Login</a></div>
   </footer>
 </body>
