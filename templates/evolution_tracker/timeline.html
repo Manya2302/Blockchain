@@ -1,0 +1,121 @@
+{% extends 'base.html' %}
+{% block title %}Version Timeline — {{ evidence.title }}{% endblock %}
+{% block nav_evolution %}active{% endblock %}
+{% block breadcrumb %}<a href="{% url 'evolution:dashboard' %}">Evolution Tracker</a> / Timeline{% endblock %}
+
+{% block content %}
+<div class="page-header" style="margin-bottom:20px;">
+  <div class="page-header-left">
+    <div class="page-title">Version Evolution Timeline</div>
+    <div class="page-subtitle">{{ evidence.title }} · {{ versions|length }} version{{ versions|length|pluralize }} tracked</div>
+  </div>
+  <div style="display:flex;gap:8px;">
+    <a href="{% url 'evolution:ai_analyze' evidence.id %}" class="btn-ai-report" onclick="return confirm('Run full AI evolution analysis? This compares all versions.')">🧠 Run AI Analysis</a>
+    <a href="{% url 'evidence:detail' evidence.id %}" class="btn btn-ghost">View Evidence →</a>
+  </div>
+</div>
+
+<!-- AI Analysis Banner -->
+{% if ai_analysis %}
+<div class="card" style="margin-bottom:20px;border-color:{{ ai_analysis.risk_color }}33;">
+  <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;">
+    <div style="flex-shrink:0;text-align:center;">
+      <div style="font-size:11px;color:var(--text-3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">AI Risk Score</div>
+      <div style="font-size:32px;font-weight:800;color:{{ ai_analysis.risk_color }};font-family:var(--font-mono);">{{ ai_analysis.anomaly_percent }}%</div>
+      <div style="font-size:12px;font-weight:700;color:{{ ai_analysis.risk_color }};margin-top:4px;">{{ ai_analysis.risk_icon }} {{ ai_analysis.risk_level }}</div>
+    </div>
+    <div style="flex:1;min-width:200px;">
+      <div style="font-size:13px;color:var(--text-2);margin-bottom:10px;">{{ ai_analysis.summary }}</div>
+      <!-- Feature Bars -->
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px;">
+        {% for feat_name, feat_val in ai_analysis.features.items %}
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:10px;color:var(--text-3);width:100px;text-overflow:ellipsis;overflow:hidden;white-space:nowrap;">{{ feat_name|cut:"_"|title }}</span>
+          <div style="flex:1;height:6px;background:var(--bg-3);border-radius:3px;overflow:hidden;">
+            <div style="height:100%;width:{% widthratio feat_val 1 100 %}%;background:{% if feat_val > 0.5 %}#ef4444{% elif feat_val > 0.25 %}#f59e0b{% else %}#10b981{% endif %};border-radius:3px;transition:width .3s;"></div>
+          </div>
+          <span style="font-size:10px;font-weight:600;color:var(--text-2);width:32px;text-align:right;">{% widthratio feat_val 1 100 %}%</span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Detected Patterns -->
+  {% if ai_analysis.patterns %}
+  <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border);">
+    <div style="font-size:11px;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">Detected Tampering Patterns</div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;">
+      {% for pattern in ai_analysis.patterns %}
+      <div style="padding:8px 14px;border-radius:var(--r-md);border:1px solid {% if pattern.severity == 'CRITICAL' %}rgba(220,38,38,.3){% elif pattern.severity == 'HIGH' %}rgba(239,68,68,.2){% else %}rgba(245,158,11,.2){% endif %};background:{% if pattern.severity == 'CRITICAL' %}rgba(220,38,38,.06){% elif pattern.severity == 'HIGH' %}rgba(239,68,68,.04){% else %}rgba(245,158,11,.04){% endif %};">
+        <div style="font-size:12px;font-weight:600;color:{% if pattern.severity == 'CRITICAL' %}#dc2626{% elif pattern.severity == 'HIGH' %}#ef4444{% else %}#f59e0b{% endif %};">{{ pattern.label }}</div>
+        <div style="font-size:11px;color:var(--text-3);margin-top:2px;">{{ pattern.description|truncatechars:80 }}</div>
+        <div style="font-size:10px;color:var(--text-3);margin-top:4px;">Confidence: {{ pattern.confidence }}%</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endif %}
+
+<!-- Version Timeline -->
+<div class="card">
+  <div class="card-head">
+    <h2 class="card-title">Version Evolution Chain</h2>
+    <span style="font-size:11px;color:var(--text-3);">{{ versions|length }} versions · {{ comparisons|length }} comparisons analyzed</span>
+  </div>
+  <div class="timeline" style="margin-top:16px;">
+    {% for item in timeline_items %}
+    <div class="tl-event {% if item.is_current %}tl-genesis{% endif %}" style="animation-delay:{{ forloop.counter0 }}0ms;">
+      <div class="tl-connector">
+        <div class="tl-dot" style="border-color:{% if item.comparison and item.comparison.fraud_score > 0.5 %}#ef4444{% elif item.comparison and item.comparison.fraud_score > 0.25 %}#f59e0b{% else %}#00d4ff{% endif %};box-shadow:0 0 8px {% if item.comparison and item.comparison.fraud_score > 0.5 %}#ef444450{% elif item.comparison and item.comparison.fraud_score > 0.25 %}#f59e0b50{% else %}#00d4ff50{% endif %};"></div>
+        {% if not forloop.last %}<div class="tl-line"></div>{% endif %}
+      </div>
+      <div class="tl-card">
+        <div class="tl-header">
+          <span class="tl-type" style="color:{% if item.is_current %}#00d4ff{% else %}var(--text-2){% endif %};">
+            v{{ item.evidence.version }}
+            {% if item.is_current %}<span class="tl-genesis-badge">CURRENT</span>{% endif %}
+            {% if forloop.first %}<span class="tl-genesis-badge" style="background:rgba(16,185,129,.12);color:#10b981;">ORIGINAL</span>{% endif %}
+          </span>
+          <span class="tl-time">{{ item.evidence.created_at|date:"Y-m-d H:i:s" }}</span>
+        </div>
+        <div style="font-size:13px;font-weight:600;color:var(--text);margin:6px 0;">{{ item.evidence.title }}</div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;font-size:11px;margin-bottom:6px;">
+          <span style="color:var(--text-3);">{{ item.evidence.file_size_display }}</span>
+          <span style="font-family:var(--font-mono);color:var(--text-3);">SHA: {{ item.evidence.sha256_hash|slice:":16" }}…</span>
+          <span style="color:var(--text-3);">by {{ item.evidence.uploader.username }}</span>
+          {% if item.evidence.is_expired %}<span style="color:#ef4444;font-weight:600;">⊘ EXPIRED</span>{% endif %}
+        </div>
+
+        {% if item.comparison %}
+        <div style="margin-top:8px;padding:10px;background:var(--bg-2);border-radius:var(--r-sm);border:1px solid var(--border);">
+          <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center;">
+            <div style="text-align:center;">
+              <div style="font-size:18px;font-weight:700;color:{% if item.comparison.fraud_score > 0.5 %}#ef4444{% elif item.comparison.fraud_score > 0.25 %}#f59e0b{% else %}#10b981{% endif %};">{{ item.comparison.fraud_percent }}%</div>
+              <div style="font-size:10px;color:var(--text-3);">Fraud Score</div>
+            </div>
+            <div style="flex:1;display:flex;gap:12px;flex-wrap:wrap;">
+              <span style="font-size:11px;color:var(--text-3);">Similarity: <strong>{{ item.comparison.text_similarity|floatformat:0 }}%</strong></span>
+              <span style="font-size:11px;color:#10b981;">+{{ item.comparison.words_added }}</span>
+              <span style="font-size:11px;color:#ef4444;">-{{ item.comparison.words_removed }}</span>
+              <span class="fraud-signal {{ item.comparison.change_type }}" style="padding:1px 6px;font-size:9px;font-weight:700;border-radius:6px;border-left:none;">{{ item.comparison.change_type }}</span>
+            </div>
+            <a href="{% url 'evolution:compare' item.evidence.id %}" class="btn btn-ghost" style="font-size:10px;padding:4px 8px;">View Diff →</a>
+          </div>
+          {% if item.comparison.fraud_signals %}
+          <div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:4px;">
+            {% for sig in item.comparison.fraud_signals %}
+            <span style="font-size:9px;padding:2px 6px;border-radius:4px;background:{% if sig.severity == 'CRITICAL' %}rgba(220,38,38,.1){% elif sig.severity == 'HIGH' %}rgba(239,68,68,.08){% else %}rgba(245,158,11,.08){% endif %};color:{% if sig.severity == 'CRITICAL' %}#dc2626{% elif sig.severity == 'HIGH' %}#ef4444{% else %}#f59e0b{% endif %};">{{ sig.label }}</span>
+            {% endfor %}
+          </div>
+          {% endif %}
+        </div>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

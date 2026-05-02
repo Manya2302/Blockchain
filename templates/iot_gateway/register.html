@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block title %}Register IoT Device{% endblock %}{% block nav_iot %}active{% endblock %}
+{% block breadcrumb %}<a href="{% url 'iot:dashboard' %}">IoT Gateway</a> / Register Device{% endblock %}
+{% block content %}
+<div style="max-width:560px;margin:0 auto;">
+<div class="card">
+  <div class="card-header"><div class="card-title">📡 Register IoT Device</div></div>
+  <form method="post" style="margin-top:16px;">{% csrf_token %}
+    <div class="form-group"><label class="form-label">Device Name *</label><input name="name" class="form-control" placeholder="Lobby CCTV Camera 1" required></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div class="form-group"><label class="form-label">Device Type</label>
+        <select name="device_type" class="form-control">{% for val,label in device_types %}<option value="{{ val }}">{{ label }}</option>{% endfor %}</select></div>
+      <div class="form-group"><label class="form-label">Organization</label>
+        <select name="organization" class="form-control"><option value="">— Global —</option>{% for org in orgs %}<option value="{{ org.id }}">{{ org.name }}</option>{% endfor %}</select></div>
+    </div>
+    <div class="form-group"><label class="form-label">Location</label><input name="location" class="form-control" placeholder="Building A, Floor 2"></div>
+    <div class="form-group"><label class="form-label">Serial Number</label><input name="serial_number" class="form-control" placeholder="Auto-generated if blank"></div>
+    <button type="submit" class="btn btn-primary" style="width:100%;margin-top:8px;">Register Device</button>
+  </form>
+</div>
+</div>
+{% endblock %}

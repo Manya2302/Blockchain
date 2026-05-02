@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% block title %}Compliance{% endblock %}{% block nav_compliance %}active{% endblock %}
+{% block breadcrumb %}Compliance Management{% endblock %}
+{% block content %}
+<div class="page-header" style="margin-bottom:20px;">
+  <div class="page-header-left"><div class="page-title">Compliance Management Suite</div>
+    <div class="page-subtitle">GDPR · HIPAA · ISO 27001 · SOC 2 · PCI DSS · NIST — Automated assessment & reporting</div></div>
+  <a href="{% url 'compliance:start' %}" class="btn btn-primary">+ New Assessment</a>
+</div>
+<div class="stats-grid" style="grid-template-columns:repeat(5,1fr);margin-bottom:20px;">
+  <div class="stat-card"><div class="stat-value">{{ stats.total }}</div><div class="stat-label">Assessments</div></div>
+  <div class="stat-card"><div class="stat-value risk-safe">{{ stats.passed }}</div><div class="stat-label">Passed</div></div>
+  <div class="stat-card"><div class="stat-value" style="color:#f59e0b;">{{ stats.in_progress }}</div><div class="stat-label">In Progress</div></div>
+  <div class="stat-card"><div class="stat-value risk-critical">{{ stats.failed }}</div><div class="stat-label">Failed</div></div>
+  <div class="stat-card"><div class="stat-value" style="color:var(--accent);">{{ stats.avg_score }}%</div><div class="stat-label">Avg Score</div></div>
+</div>
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-bottom:24px;">
+  {% for fw in frameworks %}
+  <div class="compliance-card">
+    <div style="font-size:22px;font-weight:800;font-family:var(--font-head);color:var(--accent);">{{ fw.name }}</div>
+    <div style="font-size:11px;color:var(--text-3);margin-top:4px;">v{{ fw.version }}</div>
+    <a href="{% url 'compliance:start' %}" class="btn btn-ghost btn-sm" style="margin-top:10px;display:block;text-align:center;">Assess →</a>
+  </div>
+  {% endfor %}
+</div>
+<div class="card">
+  <div class="card-header"><div class="card-title">Recent Assessments</div></div>
+  {% if assessments %}
+  <table class="pred-table" style="margin-top:8px;">
+    <thead><tr><th>Framework</th><th>Organization</th><th>Score</th><th>Grade</th><th>Status</th><th>Date</th><th></th></tr></thead>
+    <tbody>{% for a in assessments %}
+    <tr>
+      <td style="font-weight:600;">{{ a.framework.name }}</td>
+      <td>{{ a.organization.name|default:"—"|truncatechars:25 }}</td>
+      <td><div class="prob-bar-wrap"><div class="prob-bar"><div class="prob-bar-fill" style="width:{{ a.overall_score }}%;background:{{ a.score_color }};"></div></div><span class="prob-val" style="color:{{ a.score_color }};">{{ a.overall_score }}%</span></div></td>
+      <td><strong style="color:{{ a.score_color }};font-size:16px;">{{ a.compliance_grade }}</strong></td>
+      <td><span class="control-status {{ a.status|upper|cut:' ' }}">{{ a.status }}</span></td>
+      <td style="font-size:11px;color:var(--text-3);">{{ a.started_at|date:"M d, Y" }}</td>
+      <td><a href="{% url 'compliance:detail' a.id %}" class="btn btn-ghost" style="font-size:11px;padding:3px 8px;">Detail →</a></td>
+    </tr>{% endfor %}</tbody>
+  </table>
+  {% else %}<div class="empty-state" style="padding:40px;"><div class="empty-icon">📋</div><div class="empty-title">No assessments yet</div></div>
+  {% endif %}
+</div>
+{% endblock %}

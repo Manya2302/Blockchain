@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+{% block title %}Investigation Report{% endblock %}
+{% block nav_autoai %}active{% endblock %}
+{% block breadcrumb %}<a href="{% url 'autonomous_ai:dashboard' %}">AI Investigations</a> / Report{% endblock %}
+{% block content %}
+<div class="card" style="margin-bottom:20px;border-color:{{ inv.threat_color }}33;">
+  <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+    <div style="font-size:40px;">🤖</div>
+    <div style="flex:1;">
+      <div style="font-size:11px;color:var(--text-3);font-family:var(--font-mono);">{{ inv.get_investigation_type_display }} · {{ inv.started_at|date:"M d, Y H:i" }}</div>
+      <div style="font-size:20px;font-weight:700;">{{ inv.title|truncatechars:80 }}</div>
+      <div style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap;">
+        <span class="inv-type-badge">{{ inv.status }}</span>
+        <span style="font-size:11px;color:var(--text-3);">Duration: {{ inv.duration_seconds }}s · {{ inv.evidence_scope|length }} evidences</span>
+      </div>
+    </div>
+    <div style="text-align:right;">
+      <div style="font-size:32px;font-weight:800;font-family:var(--font-head);color:{{ inv.threat_color }};">{{ inv.threat_level }}</div>
+      <div style="font-size:24px;font-weight:700;color:var(--accent);">{{ inv.confidence_score|floatformat:0 }}%</div>
+      <div style="font-size:10px;color:var(--text-3);">AI Confidence</div>
+    </div>
+  </div>
+</div>
+<div style="display:grid;grid-template-columns:3fr 2fr;gap:20px;">
+  <div style="display:flex;flex-direction:column;gap:16px;">
+    {% for n in narratives %}
+    <div class="card">
+      <div class="card-header"><div class="card-title">📋 {{ n.get_narrative_type_display }}</div>
+        <span style="font-size:10px;color:var(--text-3);font-family:var(--font-mono);">{{ n.word_count }} words · Confidence {{ n.confidence|floatformat:0 }}%</span></div>
+      <div class="narrative-card" style="margin-top:10px;">{{ n.content }}</div>
+      <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
+        {% for j in n.jurisdictions %}<span class="jurisdiction-badge">{{ j }}</span>{% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+    {% if inv.attack_timeline %}
+    <div class="card">
+      <div class="card-header"><div class="card-title">⚔ Attack Kill Chain Timeline</div></div>
+      <div style="display:flex;flex-direction:column;gap:2px;margin-top:10px;">
+        {% for step in inv.attack_timeline %}
+        <div class="kill-chain-step">
+          <div class="kill-chain-num">{{ step.step }}</div>
+          <div style="flex:1;"><div style="font-size:13px;font-weight:600;color:var(--text);">{{ step.phase }}</div>
+            <div style="font-size:11px;color:var(--text-3);">{{ step.timestamp|slice:":19" }} · Confidence {{ step.confidence }}</div></div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+  <div style="display:flex;flex-direction:column;gap:16px;">
+    {% if inv.recommended_actions %}
+    <div class="card">
+      <div class="card-header"><div class="card-title">🎯 Recommended Actions</div></div>
+      <div style="display:flex;flex-direction:column;gap:6px;margin-top:10px;">
+        {% for a in inv.recommended_actions %}
+        <div class="action-item">
+          <div class="action-priority">#{{ a.priority }}</div>
+          <div style="font-size:12px;color:var(--text-2);">{{ a.action }}</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+    {% if inv.attacker_profile %}
+    <div class="card">
+      <div class="card-header"><div class="card-title">🎭 Attacker Profile</div></div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:10px;">
+        {% for k,v in inv.attacker_profile.items %}
+        <div style="display:flex;gap:8px;font-size:12px;padding:5px 0;border-bottom:1px solid var(--border);">
+          <span style="color:var(--text-3);min-width:100px;">{{ k|title|cut:"_" }}</span>
+          <span style="color:var(--text);">{% if v is not list %}{{ v }}{% else %}{{ v|join:", " }}{% endif %}</span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+    {% if inv.ioc_list %}
+    <div class="card">
+      <div class="card-header"><div class="card-title">⚠ Indicators of Compromise</div></div>
+      <div style="margin-top:10px;">{% for ioc in inv.ioc_list %}<span class="ioc-tag">{{ ioc.pattern }}</span>{% endfor %}</div>
+    </div>
+    {% endif %}
+    <a href="{% url 'legal_ai:generate_from_inv' inv.id %}" class="btn btn-primary" style="background:linear-gradient(135deg,#7c3aed,#db2777);">📄 Generate Legal Document</a>
+  </div>
+</div>
+{% endblock %}

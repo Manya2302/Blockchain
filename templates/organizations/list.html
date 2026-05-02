@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block title %}Organizations{% endblock %}
+{% block nav_org %}active{% endblock %}
+{% block breadcrumb %}Organizations{% endblock %}
+{% block content %}
+<div class="page-header" style="margin-bottom:20px;">
+  <div class="page-header-left">
+    <div class="page-title">Organizations</div>
+    <div class="page-subtitle">Multi-tenant workspaces — Phase 4 SaaS Architecture</div>
+  </div>
+  <a href="{% url 'org:create' %}" class="btn btn-primary">+ New Organization</a>
+</div>
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;">
+  {% for org in orgs %}
+  <a href="{% url 'org:detail' org.slug %}" style="text-decoration:none;">
+    <div class="org-card {{ org.status|lower }}">
+      <div class="org-header">
+        <div class="org-logo">{{ org.name.0|upper }}</div>
+        <div><div class="org-name">{{ org.name }}</div><div class="org-type">{{ org.get_org_type_display }}</div></div>
+        <span class="org-status-pill {{ org.status|lower }}">{{ org.status }}</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <div class="stat-card" style="padding:8px;text-align:center;"><div style="font-size:18px;font-weight:700;color:var(--accent);">{{ org.member_count }}</div><div style="font-size:10px;color:var(--text-3);">Members</div></div>
+        <div class="stat-card" style="padding:8px;text-align:center;"><div style="font-size:18px;font-weight:700;color:var(--accent);">{{ org.get_org_type_display|slice:":3" }}</div><div style="font-size:10px;color:var(--text-3);">Type</div></div>
+      </div>
+      <div style="font-size:11px;color:var(--text-3);margin-top:10px;font-family:var(--font-mono);">{{ org.contact_email }}</div>
+    </div>
+  </a>
+  {% empty %}
+  <div class="card" style="grid-column:1/-1;text-align:center;padding:48px;">
+    <div style="font-size:40px;">🏢</div>
+    <div style="font-size:16px;font-weight:600;color:var(--text);margin-top:12px;">No organizations yet</div>
+    <div style="font-size:13px;color:var(--text-2);margin:8px 0 16px;">Create your first organization workspace</div>
+    <a href="{% url 'org:create' %}" class="btn btn-primary">Create Organization</a>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+{% block title %}Mobile API Docs{% endblock %}{% block nav_mobile %}active{% endblock %}
+{% block breadcrumb %}Mobile API Documentation{% endblock %}
+{% block content %}
+<div class="page-header" style="margin-bottom:24px;">
+  <div class="page-header-left"><div class="page-title">📱 Mobile API</div>
+    <div class="page-subtitle">REST API for Flutter · React Native · iOS · Android · Third-party integrations</div></div>
+</div>
+<div class="two-col" style="gap:20px;align-items:start;">
+  <div style="display:flex;flex-direction:column;gap:20px;">
+    <div class="card">
+      <div class="card-header"><div class="card-title">Authentication</div></div>
+      <div style="margin-top:12px;font-size:13px;color:var(--text-2);">All endpoints require JWT Bearer token. Get token via <code style="background:var(--bg-2);padding:2px 6px;border-radius:3px;font-family:var(--font-mono);font-size:12px;">POST /api/mobile/login/</code></div>
+      <div style="background:var(--bg-2);border-radius:var(--r-md);padding:14px;margin-top:10px;font-family:var(--font-mono);font-size:12px;color:#10b981;">
+        POST /api/mobile/login/<br>
+        Content-Type: application/json<br><br>
+        {"username": "user", "password": "pass"}<br><br>
+        → {"token": "eyJ...", "user": {...}}
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><div class="card-title">Endpoints</div></div>
+      <div style="display:flex;flex-direction:column;gap:6px;margin-top:12px;">
+        {% for method, path, desc in endpoints %}
+        <div class="api-endpoint-row">
+          <span class="api-method {{ method }}">{{ method }}</span>
+          <span class="api-path">{{ path }}</span>
+          <span class="api-desc">{{ desc }}</span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:20px;">
+    <div class="card">
+      <div class="card-header"><div class="card-title">Flutter Example</div></div>
+      <div style="background:var(--bg-2);border-radius:var(--r-md);padding:14px;font-family:var(--font-mono);font-size:11px;color:#94a3b8;margin-top:10px;white-space:pre-wrap;">// Authenticate
+final resp = await http.post(
+  Uri.parse('BASE_URL/api/mobile/login/'),
+  body: {'username': u, 'password': p},
+);
+final token = resp.json['token'];
+
+// Upload Evidence
+await http.post(
+  Uri.parse('BASE_URL/api/mobile/evidence/upload/'),
+  headers: {'Authorization': 'Bearer $token'},
+  body: {'title': 'Field Evidence', ...},
+);
+
+// Verify ZKP QR
+await http.post(
+  Uri.parse('BASE_URL/api/mobile/verify-qr/'),
+  headers: {'Authorization': 'Bearer $token'},
+  body: {'proof_id': scannedId},
+);</div>
+    </div>
+    <div class="card">
+      <div class="card-header"><div class="card-title">QR Verification Flow</div></div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:12px;">
+        {% for item in qr_steps %}
+        <div style="display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);">
+          <span style="font-family:var(--font-mono);font-size:10px;color:var(--accent);width:20px;flex-shrink:0;">{{ item.0 }}</span>
+          <span style="font-size:12px;color:var(--text-2);">{{ item.1 }}</span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

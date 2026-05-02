@@ -1,0 +1,8 @@
+{% extends 'base.html' %}{% block title %}Delete User{% endblock %}
+{% block breadcrumb %}Admin / Users / <strong>Delete</strong>{% endblock %}
+{% block content %}
+<div class="page-header"><h1 class="page-title">Delete User</h1></div>
+<div class="card card-narrow">
+  <div class="confirm-danger"><div class="danger-icon">⚠</div><p>Delete <strong>{{ target.username }}</strong> ({{ target.profile.role }})? All their data will remain but the account will be removed. This cannot be undone.</p></div>
+  <form method="post" class="form-actions">{% csrf_token %}<button type="submit" class="btn btn-danger">Delete User</button><a href="{% url 'dashboard:user_list' %}" class="btn btn-ghost">Cancel</a></form>
+</div>{% endblock %}

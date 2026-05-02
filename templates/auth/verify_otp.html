@@ -1,0 +1,36 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Verify OTP | T-Vault</title>
+  <link rel="stylesheet" href="{% static 'css/auth.css' %}">
+</head>
+<body class="vault-auth">
+  <a href="{% url 'home:landing' %}" class="auth-home">T-Vault</a>
+  <main class="auth-shell">
+    <section class="auth-panel">
+      <div class="auth-mark"><span></span></div>
+      <span class="auth-eyebrow">Verification required</span>
+      <h1>Enter your OTP.</h1>
+      <p class="auth-intro">Use the 6-digit code sent to {{ user.email|default:"your email" }}. In development, the code appears in the console email output.</p>
+      <form method="post" class="auth-form otp-form" data-auth-form novalidate>
+        {% csrf_token %}
+        <label class="auth-field otp-field">
+          <span>Verification code</span>
+          {{ form.token }}
+          <small data-field-hint>Code expires in 15 minutes.</small>
+          {% if form.token.errors %}<strong>{{ form.token.errors.0 }}</strong>{% endif %}
+        </label>
+        <button type="submit" class="auth-submit">Verify Code</button>
+      </form>
+      <div class="auth-links"><a href="{% url 'users:forgot_password' %}">Resend recovery OTP</a><a href="{% url 'users:login' %}">Back to login</a></div>
+    </section>
+    <aside class="auth-visual register-visual" data-auth-visual aria-hidden="true">
+      <div class="scan-card"><span class="scan-line"></span><div class="scan-node n1"></div><div class="scan-node n2"></div><div class="scan-node n3"></div><div class="typing-ring"><i></i><i></i><i></i><i></i></div><h2>Code Lock</h2><p>The vault unlocks only after the one-time code matches an active session.</p></div>
+    </aside>
+  </main>
+  <script src="{% static 'js/auth.js' %}"></script>
+</body>
+</html>

@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+{% block title %}Infrastructure Health{% endblock %}
+{% block nav_heal %}active{% endblock %}
+{% block breadcrumb %}Self-Healing Infrastructure{% endblock %}
+{% block content %}
+<div class="p5-hero">
+  <div class="p5-hero-label">Phase 5 · Auto-Recovery · Zero-Downtime · Distributed Resilience</div>
+  <div class="p5-hero-title">🔧 Self-Healing Blockchain Infrastructure</div>
+  <div class="p5-hero-sub">Real-time health monitoring · Automatic failover · Evidence rerouting · Zero-downtime recovery</div>
+</div>
+<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px;">
+  <div class="p5-stat"><div class="p5-stat-val">{{ stats.total }}</div><div class="p5-stat-label">Components</div></div>
+  <div class="p5-stat"><div class="p5-stat-val" style="color:#10b981;">{{ stats.healthy }}</div><div class="p5-stat-label">Healthy</div></div>
+  <div class="p5-stat"><div class="p5-stat-val" style="color:#ef4444;">{{ stats.critical }}</div><div class="p5-stat-label">Critical/Offline</div></div>
+  <div class="p5-stat"><div class="p5-stat-val" style="color:#a78bfa;">{{ stats.avg_health }}%</div><div class="p5-stat-label">Avg Health</div></div>
+  <div class="p5-stat"><div class="p5-stat-val" style="color:#10b981;">{{ stats.uptime }}%</div><div class="p5-stat-label">Avg Uptime</div></div>
+</div>
+<div style="display:grid;grid-template-columns:2fr 1fr;gap:20px;">
+  <div>
+    <div class="card" style="margin-bottom:16px;">
+      <div class="card-header"><div class="card-title">Component Health Monitor</div>
+        <span style="font-size:11px;color:var(--text-3);">Auto-refreshes every 30s</span></div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:10px;">
+        {% for comp in components %}
+        <div class="infra-card {{ comp.status }}">
+          <div style="font-size:20px;flex-shrink:0;">{% if 'BLOCKCHAIN' in comp.component %}⛓{% elif 'IPFS' in comp.component %}📁{% elif 'AI' in comp.component %}🧠{% elif 'DATABASE' in comp.component %}🗄{% elif 'API' in comp.component %}🌐{% elif 'FORENSIC' in comp.component %}🔍{% else %}💾{% endif %}</div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:12px;font-weight:600;color:var(--text);">{{ comp.component_id }}</div>
+            <div style="font-size:10px;color:var(--text-3);">{{ comp.get_component_display }} · {{ comp.latency_ms }}ms · {{ comp.uptime_percent }}% uptime</div>
+            <div style="height:4px;background:var(--bg-3);border-radius:2px;overflow:hidden;margin-top:5px;">
+              <div style="height:100%;border-radius:2px;background:{{ comp.status_color }};width:{{ comp.health_score|floatformat:0 }}%;transition:width .5s;"></div>
+            </div>
+          </div>
+          <div style="text-align:right;flex-shrink:0;">
+            <div style="font-size:16px;font-weight:700;color:{{ comp.status_color }};">{{ comp.health_score|floatformat:0 }}%</div>
+            <div style="font-size:10px;color:var(--text-3);">{{ comp.status }}</div>
+            {% if comp.status in 'DEGRADED,CRITICAL,OFFLINE' and request.user.profile.role == 'ADMIN' %}
+            <a href="{% url 'self_healing:heal' comp.id %}" class="heal-action-btn" style="margin-top:4px;display:inline-block;" onclick="return confirm('Trigger self-heal on {{ comp.component_id }}?')">⚡ Heal</a>
+            {% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:16px;">
+    <div class="card">
+      <div class="card-header"><div class="card-title">Recent Healing Events</div></div>
+      <div style="display:flex;flex-direction:column;gap:4px;margin-top:8px;">
+        {% for event in events %}
+        <div class="healing-event-row">
+          <span class="heal-icon">{% if event.success %}✅{% else %}❌{% endif %}</span>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:12px;font-weight:600;color:var(--text);">{{ event.action_type|cut:"_"|title }}</div>
+            <div style="font-size:10px;color:var(--text-3);">{{ event.triggered_at|date:"M d H:i" }} · {{ event.recovery_time_seconds }}s recovery</div>
+          </div>
+          <span style="font-size:10px;color:{% if event.success %}#10b981{% else %}#ef4444{% endif %};font-weight:700;">{{ event.evidence_affected }} EV</span>
+        </div>
+        {% empty %}
+        <div style="font-size:13px;color:var(--text-3);padding:12px 0;">All systems healthy — no healing events.</div>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="card" style="background:rgba(16,185,129,.04);border-color:rgba(16,185,129,.15);">
+      <div class="card-header"><div class="card-title">Auto-Recovery Features</div></div>
+      <div style="display:flex;flex-direction:column;gap:6px;margin-top:10px;font-size:12px;color:var(--text-2);">
+        <div style="display:flex;gap:6px;"><span style="color:#10b981;">✓</span>Evidence chain auto-rerouting</div>
+        <div style="display:flex;gap:6px;"><span style="color:#10b981;">✓</span>IPFS re-pinning on node failure</div>
+        <div style="display:flex;gap:6px;"><span style="color:#10b981;">✓</span>Cross-chain bridge failover</div>
+        <div style="display:flex;gap:6px;"><span style="color:#10b981;">✓</span>Database replica promotion</div>
+        <div style="display:flex;gap:6px;"><span style="color:#10b981;">✓</span>AI cluster load rebalancing</div>
+        <div style="display:flex;gap:6px;"><span style="color:#10b981;">✓</span>Zero-downtime key rotation</div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block title %}Create ZKP Proof{% endblock %}{% block nav_zkp %}active{% endblock %}
+{% block breadcrumb %}<a href="{% url 'zkp:dashboard' %}">ZKP</a> / Create Proof{% endblock %}
+{% block content %}
+<div style="max-width:600px;margin:0 auto;">
+<div class="card">
+  <div class="card-header"><div class="card-title">🔐 Create Zero-Knowledge Proof</div></div>
+  <div style="background:rgba(0,212,255,.06);border:1px solid rgba(0,212,255,.15);border-radius:var(--r-md);padding:14px;margin:16px 0;font-size:12px;color:var(--text-2);">
+    <strong style="color:var(--accent);">How it works:</strong> A ZKP proof commits to your document hash using a cryptographic circuit. The verifier can confirm authenticity without ever seeing the actual document content.
+  </div>
+  <div style="background:var(--bg-2);border-radius:var(--r-md);padding:12px;margin-bottom:16px;">
+    <div style="font-size:11px;color:var(--text-3);margin-bottom:6px;">Target Evidence</div>
+    <div style="font-size:14px;font-weight:600;">{{ evidence.title }}</div>
+    <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-3);margin-top:4px;">SHA-256: {{ evidence.sha256_hash|truncatechars:32 }}...</div>
+  </div>
+  <form method="post">{% csrf_token %}
+    <div class="form-group"><label class="form-label">Use Case</label>
+      <select name="use_case" class="form-control">{% for val,label in use_cases %}<option value="{{ val }}">{{ label }}</option>{% endfor %}</select></div>
+    <button type="submit" class="zkp-verify-btn" style="width:100%;margin-top:12px;justify-content:center;">🔐 Generate ZK Proof</button>
+  </form>
+</div>
+</div>
+{% endblock %}

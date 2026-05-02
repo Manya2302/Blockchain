@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+{% block title %}{{ proposal.title|truncatechars:40 }}{% endblock %}
+{% block nav_dao %}active{% endblock %}
+{% block breadcrumb %}<a href="{% url 'dao_governance:dashboard' %}">DAO</a> / Proposal{% endblock %}
+{% block content %}
+<div class="card" style="margin-bottom:20px;border-color:rgba(139,92,246,.3);">
+  <div style="display:flex;align-items:flex-start;gap:14px;flex-wrap:wrap;">
+    <div style="font-size:32px;">🏛</div>
+    <div style="flex:1;">
+      <div style="display:flex;gap:8px;margin-bottom:6px;flex-wrap:wrap;">
+        <span class="inv-type-badge">{{ proposal.get_proposal_type_display }}</span>
+        <span class="dao-status {{ proposal.status }}">{{ proposal.status }}</span>
+      </div>
+      <div style="font-size:20px;font-weight:700;">{{ proposal.title }}</div>
+      <div style="font-size:13px;color:var(--text-2);margin-top:6px;">{{ proposal.description }}</div>
+      {% if proposal.technical_spec %}
+      <div style="margin-top:10px;background:var(--bg-2);border-radius:var(--r-sm);padding:10px;font-size:12px;color:var(--text-2);font-family:var(--font-mono);">{{ proposal.technical_spec }}</div>
+      {% endif %}
+    </div>
+    <div style="text-align:right;flex-shrink:0;">
+      <div style="font-size:28px;font-weight:800;color:{% if proposal.approval_rate >= 67 %}#10b981{% else %}#ef4444{% endif %};">{{ proposal.approval_rate }}%</div>
+      <div style="font-size:11px;color:var(--text-3);">approval rate</div>
+      <div style="font-size:11px;color:var(--text-3);margin-top:4px;">{{ proposal.total_votes }} total votes</div>
+    </div>
+  </div>
+</div>
+{% if not my_vote and proposal.status == 'ACTIVE' %}
+<div class="card" style="margin-bottom:20px;border-color:rgba(139,92,246,.25);">
+  <div class="card-header"><div class="card-title">Cast Your Vote</div></div>
+  <form method="post" action="{% url 'dao_governance:vote' proposal.id %}" style="margin-top:14px;">{% csrf_token %}
+    <div class="form-group"><label class="form-label">Rationale (optional)</label>
+      <textarea name="rationale" class="form-control" rows="2" placeholder="Explain your vote..."></textarea></div>
+    <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap;">
+      <button type="submit" name="choice" value="FOR" class="vote-choice-btn for" style="flex:1;">👍 Vote For</button>
+      <button type="submit" name="choice" value="AGAINST" class="vote-choice-btn against" style="flex:1;">👎 Vote Against</button>
+      <button type="submit" name="choice" value="ABSTAIN" class="vote-choice-btn abstain" style="flex:1;">⚖ Abstain</button>
+    </div>
+  </form>
+</div>
+{% elif my_vote %}
+<div style="background:rgba(139,92,246,.08);border:1px solid rgba(139,92,246,.25);border-radius:var(--r-md);padding:12px 16px;margin-bottom:20px;font-size:13px;">
+  You voted: <strong style="color:#8b5cf6;">{{ my_vote.choice }}</strong>{% if my_vote.rationale %} — "{{ my_vote.rationale|truncatechars:80 }}"{% endif %}
+</div>
+{% endif %}
+<div class="card">
+  <div class="card-header"><div class="card-title">Vote Breakdown</div></div>
+  <div style="display:flex;flex-direction:column;gap:10px;margin-top:14px;">
+    <div class="vote-bar-row" style="gap:12px;">
+      <span class="vote-label" style="width:80px;">For</span>
+      <div class="vote-bar" style="height:12px;">
+        <div class="vote-bar-fill" style="width:{% if proposal.total_votes %}{% widthratio proposal.votes_for proposal.total_votes 100 %}{% else %}0{% endif %}%;background:#10b981;"></div>
+      </div>
+      <span style="font-size:13px;font-weight:700;color:#10b981;">{{ proposal.votes_for }}</span>
+    </div>
+    <div class="vote-bar-row" style="gap:12px;">
+      <span class="vote-label" style="width:80px;">Against</span>
+      <div class="vote-bar" style="height:12px;">
+        <div class="vote-bar-fill" style="width:{% if proposal.total_votes %}{% widthratio proposal.votes_against proposal.total_votes 100 %}{% else %}0{% endif %}%;background:#ef4444;"></div>
+      </div>
+      <span style="font-size:13px;font-weight:700;color:#ef4444;">{{ proposal.votes_against }}</span>
+    </div>
+    <div class="vote-bar-row" style="gap:12px;">
+      <span class="vote-label" style="width:80px;">Abstain</span>
+      <div class="vote-bar" style="height:12px;">
+        <div class="vote-bar-fill" style="width:{% if proposal.total_votes %}{% widthratio proposal.votes_abstain proposal.total_votes 100 %}{% else %}0{% endif %}%;background:#6b7280;"></div>
+      </div>
+      <span style="font-size:13px;color:var(--text-3);">{{ proposal.votes_abstain }}</span>
+    </div>
+  </div>
+  <div style="margin-top:14px;font-size:12px;color:var(--text-3);">
+    Pass threshold: {{ proposal.pass_threshold }}% supermajority · Quorum: {{ proposal.quorum_required }}%
+  </div>
+</div>
+{% endblock %}

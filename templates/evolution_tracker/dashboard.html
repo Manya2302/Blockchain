@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+{% block title %}Document Evolution Tracker{% endblock %}
+{% block nav_evolution %}active{% endblock %}
+{% block breadcrumb %}Document Evolution Tracker{% endblock %}
+
+{% block content %}
+<div class="page-header" style="margin-bottom:24px;">
+  <div class="page-header-left">
+    <div class="page-title">AI-Powered Fake Document Evolution Tracker</div>
+    <div class="page-subtitle">Detects gradual fraud across document versions using text-diff, hash analysis, AI pattern detection, and structural comparison</div>
+  </div>
+  {% if forged_count > 0 or critical_count > 0 %}
+  <div style="background:rgba(220,38,38,.1);border:1px solid rgba(220,38,38,.3);border-radius:var(--r-md);padding:10px 16px;display:flex;align-items:center;gap:10px;">
+    <span style="font-size:20px;">🚨</span>
+    <div>
+      <div style="font-size:13px;font-weight:700;color:#ef4444;">{{ forged_count }} Forgery Alert{{ forged_count|pluralize }} · {{ critical_count }} Critical AI Detection{{ critical_count|pluralize }}</div>
+      <div style="font-size:11px;color:var(--text-3);">Critical or forged document mutations detected</div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+<!-- AI Stats -->
+<div class="stats-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:20px;">
+  <div class="stat-card"><div class="stat-value" style="color:var(--accent);">{{ versioned_evidence|length }}</div><div class="stat-label">Versioned Docs</div></div>
+  <div class="stat-card"><div class="stat-value risk-critical">{{ forged_count }}</div><div class="stat-label">Forgery Alerts</div></div>
+  <div class="stat-card"><div class="stat-value" style="color:#ef4444;">{{ critical_count }}</div><div class="stat-label">AI Critical</div></div>
+  <div class="stat-card"><div class="stat-value" style="color:#f59e0b;">{{ high_count }}</div><div class="stat-label">AI High Risk</div></div>
+</div>
+
+<div class="two-col" style="gap:20px;">
+  <!-- Versioned documents -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">Versioned Evidence</div>
+      <span style="font-size:11px;color:var(--text-3);">{{ versioned_evidence|length }} documents with revisions</span>
+    </div>
+    {% if versioned_evidence %}
+    <div style="display:flex;flex-direction:column;gap:2px;margin-top:8px;">
+      {% for ev in versioned_evidence %}
+      <div style="display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:var(--r-sm);border:1px solid var(--border);background:var(--bg-2);">
+        <div style="width:36px;height:36px;border-radius:var(--r-sm);background:rgba(0,212,255,.1);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">📄</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:13px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ ev.title }}</div>
+          <div style="font-size:11px;color:var(--text-3);">v{{ ev.version }} → v{{ ev.parent_evidence.version }} · {{ ev.created_at|date:"M d, Y" }}</div>
+        </div>
+        <div style="display:flex;gap:6px;flex-shrink:0;">
+          <a href="{% url 'evolution:compare' ev.id %}" class="btn btn-ghost" style="font-size:11px;padding:5px 10px;">Compare</a>
+          <a href="{% url 'evolution:timeline' ev.id %}" class="btn-ai-report" style="font-size:11px;padding:5px 10px;">Timeline</a>
+          <a href="{% url 'evolution:ai_analyze' ev.id %}" class="btn btn-sm" style="background:rgba(139,92,246,.1);color:#a78bfa;border:1px solid rgba(139,92,246,.3);font-size:11px;padding:5px 10px;">🧠 AI</a>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state" style="padding:40px;">
+      <div class="empty-icon">🔀</div>
+      <div class="empty-title">No versioned documents</div>
+      <div class="empty-sub">Upload a new version of existing evidence to begin evolution tracking.</div>
+    </div>
+    {% endif %}
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:16px;">
+    <!-- AI Analyses -->
+    {% if ai_analyses %}
+    <div class="card">
+      <div class="card-header"><div class="card-title">🧠 AI Evolution Analyses</div></div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px;">
+        {% for a in ai_analyses %}
+        <div style="padding:12px;border-radius:var(--r-md);border:1px solid {% if a.risk_level == 'CRITICAL' %}rgba(220,38,38,.3){% elif a.risk_level == 'HIGH' %}rgba(239,68,68,.2){% else %}var(--border){% endif %};background:var(--glass);">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+            <div style="font-size:13px;font-weight:600;color:var(--text);">{{ a.evidence.title|truncatechars:30 }}</div>
+            <span style="padding:2px 8px;font-size:10px;font-weight:700;border-radius:8px;color:{{ a.risk_color }};background:{{ a.risk_color }}15;">{{ a.risk_icon }} {{ a.risk_level }}</span>
+          </div>
+          <div style="display:flex;gap:12px;flex-wrap:wrap;">
+            <span style="font-size:11px;color:var(--text-3);">Score: <strong style="color:{{ a.risk_color }};">{{ a.anomaly_percent }}%</strong></span>
+            <span style="font-size:11px;color:var(--text-3);">{{ a.version_count }} versions</span>
+            <span style="font-size:11px;color:var(--text-3);">{{ a.patterns|length }} pattern{{ a.patterns|length|pluralize }}</span>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Recent comparisons -->
+    <div class="card">
+      <div class="card-header"><div class="card-title">Recent Comparisons</div></div>
+      {% if recent_comparisons %}
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px;">
+        {% for c in recent_comparisons %}
+        <div style="padding:12px;border-radius:var(--r-md);border:1px solid {% if c.change_type == 'CRITICAL' %}rgba(220,38,38,.3){% elif c.change_type == 'FORGED' %}rgba(239,68,68,.2){% else %}var(--border){% endif %};background:var(--glass);">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+            <div style="font-size:13px;font-weight:600;color:var(--text);">{{ c.evidence.title|truncatechars:30 }}</div>
+            <span class="fraud-signal {{ c.change_type }}" style="padding:2px 8px;font-size:10px;font-weight:700;border-radius:8px;border-left:none;">{{ c.change_type }}</span>
+          </div>
+          <div style="display:flex;gap:12px;flex-wrap:wrap;">
+            <span style="font-size:11px;color:var(--text-3);">Similarity: <strong style="color:var(--text);">{{ c.text_similarity|floatformat:0 }}%</strong></span>
+            <span style="font-size:11px;color:#10b981;">+{{ c.words_added }} words</span>
+            <span style="font-size:11px;color:#ef4444;">-{{ c.words_removed }} words</span>
+            <span style="font-size:11px;font-weight:700;color:{% if c.fraud_score > 0.5 %}#ef4444{% elif c.fraud_score > 0.25 %}#f59e0b{% else %}#10b981{% endif %};">Fraud: {{ c.fraud_percent }}%</span>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="empty-state" style="padding:32px;"><div class="empty-icon">📊</div><div class="empty-title">No comparisons yet</div></div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

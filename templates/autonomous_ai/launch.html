@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block title %}Launch Investigation{% endblock %}
+{% block nav_autoai %}active{% endblock %}
+{% block breadcrumb %}<a href="{% url 'autonomous_ai:dashboard' %}">AI Investigations</a> / Launch{% endblock %}
+{% block content %}
+<div style="max-width:680px;margin:0 auto;">
+<div class="card">
+  <div class="card-header"><div class="card-title">⚡ Launch Autonomous AI Investigation</div></div>
+  <div style="background:rgba(167,139,250,.06);border:1px solid rgba(167,139,250,.15);border-radius:var(--r-md);padding:14px;margin:14px 0;font-size:12px;color:var(--text-2);">
+    The AI engine uses BiLSTM sequence modeling, Graph Neural Networks, and LLM narrative generation to autonomously investigate evidence chains, reconstruct attack timelines, build attacker profiles, and recommend legal actions.
+  </div>
+  <form method="post">{% csrf_token %}
+    <div class="form-group"><label class="form-label">Investigation Type</label>
+      <select name="investigation_type" class="form-control">{% for val,lbl in inv_types %}<option value="{{ val }}">{{ lbl }}</option>{% endfor %}</select></div>
+    <div class="form-group" style="margin-top:12px;"><label class="form-label">Evidence Scope (select multiple)</label>
+      <div style="background:var(--bg-2);border:1px solid var(--border);border-radius:var(--r-md);padding:12px;max-height:200px;overflow-y:auto;">
+        {% for ev in evidence_list %}
+        <label style="display:flex;align-items:center;gap:8px;padding:6px 0;cursor:pointer;">
+          <input type="checkbox" name="evidence_ids[]" value="{{ ev.id }}" checked style="accent-color:var(--accent);">
+          <span style="font-size:12px;">{{ ev.title|truncatechars:50 }}</span>
+          <span style="font-size:10px;color:var(--text-3);margin-left:auto;">{{ ev.status }}</span>
+        </label>
+        {% endfor %}
+      </div></div>
+    <button type="submit" class="btn btn-primary" style="width:100%;margin-top:16px;background:linear-gradient(135deg,#7c3aed,#db2777);">🤖 Launch Autonomous Investigation</button>
+  </form>
+</div>
+</div>
+{% endblock %}

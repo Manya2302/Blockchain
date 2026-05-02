@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% block title %}New Organization{% endblock %}
+{% block nav_org %}active{% endblock %}
+{% block breadcrumb %}<a href="{% url 'org:list' %}">Organizations</a> / Create{% endblock %}
+{% block content %}
+<div style="max-width:640px;margin:0 auto;">
+<div class="card">
+  <div class="card-header"><div class="card-title">🏢 Create Organization</div></div>
+  <form method="post" style="margin-top:16px;">{% csrf_token %}
+    <div class="form-group"><label class="form-label">Organization Name *</label>
+      <input name="name" class="form-control" placeholder="Acme Forensics Ltd." required></div>
+    <div class="form-group"><label class="form-label">Organization Type</label>
+      <select name="org_type" class="form-control">
+        {% for val,label in org_type_choices %}<option value="{{ val }}">{{ label }}</option>{% endfor %}
+      </select></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div class="form-group"><label class="form-label">Contact Email *</label>
+        <input name="contact_email" type="email" class="form-control" placeholder="contact@org.com"></div>
+      <div class="form-group"><label class="form-label">Website</label>
+        <input name="website" type="url" class="form-control" placeholder="https://"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div class="form-group"><label class="form-label">Country</label>
+        <input name="country" class="form-control" placeholder="United States"></div>
+      <div class="form-group"><label class="form-label">City</label>
+        <input name="city" class="form-control" placeholder="New York"></div>
+    </div>
+    <button type="submit" class="btn btn-primary" style="width:100%;margin-top:8px;">Create Organization</button>
+  </form>
+</div>
+</div>
+{% endblock %}

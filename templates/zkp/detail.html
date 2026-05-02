@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block title %}ZKP Proof{% endblock %}{% block nav_zkp %}active{% endblock %}
+{% block breadcrumb %}<a href="{% url 'zkp:dashboard' %}">ZKP</a> / Proof Detail{% endblock %}
+{% block content %}
+<div class="zkp-proof-card" style="margin-bottom:20px;">
+  <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+    <div style="font-size:40px;">🔐</div>
+    <div style="flex:1;"><div style="font-size:11px;color:var(--text-3);font-family:var(--font-mono);">{{ proof.proof_circuit }} · {{ proof.get_use_case_display }}</div>
+      <div style="font-size:20px;font-weight:700;color:var(--text);">{{ proof.evidence.title }}</div>
+      <div style="font-size:12px;color:var(--text-2);margin-top:4px;">Created {{ proof.created_at|date:"M d, Y H:i" }} · Expires {{ proof.expires_at|date:"M d, Y"|default:"Never" }}</div></div>
+    <span class="zkp-status-badge {{ proof.status }}" style="font-size:14px;padding:6px 14px;">{% if proof.status == "VALID" %}✓{% else %}✕{% endif %} {{ proof.status }}</span>
+  </div>
+  <div style="margin-top:16px;"><div style="font-size:11px;color:var(--text-3);margin-bottom:4px;">Cryptographic Commitment (public)</div>
+    <div class="zkp-commitment">{{ proof.commitment }}</div></div>
+</div>
+<div class="two-col" style="gap:20px;">
+  <div class="card"><div class="card-header"><div class="card-title">Public Inputs (Disclosed Fields)</div></div>
+    <div style="margin-top:12px;">{% for key, val in proof.public_inputs.items %}
+      <div class="zkp-public-field"><span style="color:var(--text-3);">{{ key|title|cut:"_" }}</span><strong>{{ val }}</strong></div>
+      {% endfor %}</div>
+    <div style="margin-top:16px;padding:12px;background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.15);border-radius:var(--r-sm);font-size:12px;color:var(--text-2);">
+      <strong style="color:#10b981;">🔒 Private (Not Disclosed):</strong> Document content, full hash, personal identifiers, metadata beyond above fields.</div>
+  </div>
+  <div class="card"><div class="card-header"><div class="card-title">Verification</div></div>
+    <div style="margin-top:12px;">
+      <div style="font-size:12px;color:var(--text-2);margin-bottom:8px;">Public verification URL:</div>
+      <div class="zkp-commitment" style="font-size:11px;">{{ proof.verification_url }}</div>
+      <a href="{% url 'zkp:verify' proof.proof_id %}" target="_blank" class="zkp-verify-btn" style="margin-top:12px;display:inline-flex;">🔍 Verify Publicly</a>
+    </div>
+    <div style="margin-top:16px;border-top:1px solid var(--border);padding-top:14px;">
+      <div style="font-size:12px;color:var(--text-3);">Nullifier (replay protection):</div>
+      <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-3);word-break:break-all;margin-top:4px;">{{ proof.nullifier }}</div>
+    </div>
+  </div>
+</div>
+{% endblock %}

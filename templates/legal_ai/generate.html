@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% block title %}Generate Legal Document{% endblock %}
+{% block nav_legalai %}active{% endblock %}
+{% block breadcrumb %}<a href="{% url 'legal_ai:dashboard' %}">Legal AI</a> / Generate{% endblock %}
+{% block content %}
+<div style="max-width:640px;margin:0 auto;">
+<div class="card">
+  <div class="card-header"><div class="card-title">📄 Generate AI Legal Document</div></div>
+  {% if investigation %}
+  <div style="background:rgba(167,139,250,.06);border:1px solid rgba(167,139,250,.2);border-radius:var(--r-md);padding:12px;margin:14px 0;">
+    <div style="font-size:11px;color:var(--text-3);">Based on AI Investigation</div>
+    <div style="font-size:14px;font-weight:600;color:var(--text);">{{ investigation.title|truncatechars:60 }}</div>
+    <div style="font-size:11px;color:{{ investigation.threat_color }};margin-top:3px;">{{ investigation.threat_level }} · {{ investigation.confidence_score|floatformat:0 }}% confidence</div>
+  </div>
+  {% endif %}
+  <form method="post" style="margin-top:{% if investigation %}4{% else %}16{% endif %}px;">{% csrf_token %}
+    <div class="form-group"><label class="form-label">Document Type *</label>
+      <select name="doc_type" class="form-control">{% for val,lbl in doc_types %}<option value="{{ val }}">{{ lbl }}</option>{% endfor %}</select></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div class="form-group"><label class="form-label">Jurisdiction</label>
+        <select name="jurisdiction" class="form-control">{% for val,lbl in jurisdictions %}<option value="{{ val }}">{{ lbl }}</option>{% endfor %}</select></div>
+      <div class="form-group"><label class="form-label">Language</label>
+        <select name="language" class="form-control">{% for val,lbl in languages %}<option value="{{ val }}">{{ lbl }}</option>{% endfor %}</select></div>
+    </div>
+    <div style="background:rgba(16,185,129,.05);border:1px solid rgba(16,185,129,.15);border-radius:var(--r-sm);padding:10px;font-size:12px;color:var(--text-2);margin:10px 0;">
+      The AI will generate a jurisdiction-appropriate document with legal citations, blockchain proof references, quantum signature attestation, and chain-of-custody verification.
+    </div>
+    <button type="submit" class="btn btn-primary" style="width:100%;background:linear-gradient(135deg,#7c3aed,#db2777);">⚖ Generate Legal Document</button>
+  </form>
+</div>
+</div>
+{% endblock %}

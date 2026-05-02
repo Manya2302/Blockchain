@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% block title %}Run Simulation{% endblock %}
+{% block nav_dtwin %}active{% endblock %}
+{% block breadcrumb %}<a href="{% url 'digital_twin:dashboard' %}">Digital Twins</a> / Run Simulation{% endblock %}
+{% block content %}
+<div style="max-width:600px;margin:0 auto;">
+<div class="card">
+  <div class="card-header"><div class="card-title">⚡ Launch Attack Simulation on {{ twin.name }}</div></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0;">
+    <div class="stat-card" style="padding:10px;"><div style="font-size:12px;color:var(--text-3);">Network Nodes</div><div style="font-size:20px;font-weight:700;color:var(--accent);">{{ twin.topology.nodes|default:0 }}</div></div>
+    <div class="stat-card" style="padding:10px;"><div style="font-size:12px;color:var(--text-3);">Known Vulnerabilities</div><div style="font-size:20px;font-weight:700;color:#ef4444;">{{ twin.vulnerabilities|length }}</div></div>
+  </div>
+  <form method="post">{% csrf_token %}
+    <div class="form-group"><label class="form-label">Attack Scenario</label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px;">
+        {% for val,lbl in scenarios %}
+        <label class="attack-type-btn" onclick="this.querySelector('input').checked=true;document.querySelectorAll('.attack-type-btn').forEach(b=>b.classList.remove('selected'));this.classList.add('selected')">
+          <input type="radio" name="attack_scenario" value="{{ val }}" style="display:none;" {% if forloop.first %}checked{% endif %}>
+          <div class="attack-type-btn-name">{{ lbl }}</div>
+        </label>
+        {% endfor %}
+      </div>
+    </div>
+    <button type="submit" class="btn btn-primary" style="width:100%;margin-top:14px;background:linear-gradient(135deg,#7c3aed,#db2777);">⚡ Launch Attack Simulation</button>
+  </form>
+</div>
+</div>
+{% endblock %}

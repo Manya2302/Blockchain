@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+{% block title %}AI Investigations{% endblock %}
+{% block nav_autoai %}active{% endblock %}
+{% block breadcrumb %}Autonomous AI Investigation Engine{% endblock %}
+{% block content %}
+<div class="p5-hero">
+  <div class="p5-hero-label">Phase 5 · Transformer + GNN + RL</div>
+  <div class="p5-hero-title">🤖 Autonomous AI Investigation Engine</div>
+  <div class="p5-hero-sub">BiLSTM · Graph Neural Networks · LLM Narrative Generation · Reinforcement Learning Threat Response</div>
+</div>
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;">
+  <div class="p5-stat"><div class="p5-stat-val">{{ stats.total }}</div><div class="p5-stat-label">Investigations</div></div>
+  <div class="p5-stat"><div class="p5-stat-val" style="color:#10b981;">{{ stats.complete }}</div><div class="p5-stat-label">Complete</div></div>
+  <div class="p5-stat"><div class="p5-stat-val" style="color:#dc2626;">{{ stats.critical }}</div><div class="p5-stat-label">Critical Threat</div></div>
+  <div class="p5-stat"><div class="p5-stat-val" style="color:#a78bfa;">{{ stats.avg_confidence }}%</div><div class="p5-stat-label">Avg Confidence</div></div>
+</div>
+<div style="display:grid;grid-template-columns:2fr 1fr;gap:20px;">
+  <div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+      <h2 style="font-size:14px;font-weight:600;color:var(--text);">Active Investigations</h2>
+      <a href="{% url 'autonomous_ai:launch' %}" class="btn btn-primary btn-sm">⚡ Launch Investigation</a>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      {% for inv in investigations %}
+      <div class="investigation-card {{ inv.threat_level }}">
+        <div style="display:flex;align-items:flex-start;gap:12px;">
+          <div style="flex:1;min-width:0;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+              <span class="inv-type-badge">{{ inv.get_investigation_type_display }}</span>
+              <span class="dao-status {{ inv.status }}" style="font-size:10px;">{{ inv.status }}</span>
+            </div>
+            <div style="font-size:14px;font-weight:600;color:var(--text);">{{ inv.title|truncatechars:60 }}</div>
+            <div style="font-size:11px;color:var(--text-3);margin-top:4px;">{{ inv.started_at|date:"M d, Y H:i" }} · {{ inv.evidence_scope|length }} evidence items</div>
+            {% if inv.detected_patterns %}
+            <div class="pattern-tags" style="margin-top:6px;">{% for p in inv.ioc_list|slice:":3" %}<span class="ioc-tag">{{ p.type|default:p }}</span>{% endfor %}</div>
+            {% endif %}
+          </div>
+          <div style="text-align:right;flex-shrink:0;">
+            <div style="font-size:24px;font-weight:800;font-family:var(--font-head);color:{{ inv.threat_color }};">{{ inv.threat_level }}</div>
+            <div style="font-size:18px;font-weight:700;color:var(--accent);">{{ inv.confidence_score|floatformat:0 }}%</div>
+            <div style="font-size:10px;color:var(--text-3);">confidence</div>
+            <a href="{% url 'autonomous_ai:detail' inv.id %}" class="btn btn-ghost" style="font-size:11px;padding:4px 8px;margin-top:6px;">Report →</a>
+          </div>
+        </div>
+      </div>
+      {% empty %}
+      <div class="card" style="text-align:center;padding:48px;">
+        <div style="font-size:40px;">🤖</div>
+        <div style="font-size:16px;font-weight:600;margin-top:12px;">No investigations yet</div>
+        <div style="font-size:13px;color:var(--text-2);margin:8px 0 16px;">Launch an autonomous investigation to begin.</div>
+        <a href="{% url 'autonomous_ai:launch' %}" class="btn btn-primary">⚡ Launch First Investigation</a>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-header"><div class="card-title">Investigation Types</div></div>
+    <canvas id="typeChart" height="220" style="margin-top:12px;"></canvas>
+    <div style="margin-top:16px;padding:14px;background:rgba(167,139,250,.06);border:1px solid rgba(167,139,250,.15);border-radius:var(--r-md);">
+      <div style="font-size:12px;font-weight:600;color:#a78bfa;margin-bottom:8px;">AI Pipeline</div>
+      {% for step in ai_pipeline %}
+      <div style="display:flex;align-items:center;gap:8px;padding:5px 0;font-size:11px;color:var(--text-2);border-bottom:1px solid var(--border);">
+        <span style="color:#a78bfa;">→</span> {{ step }}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+<script>
+const td = {{ inv_type_dist_json|safe }};
+new Chart(document.getElementById('typeChart'),{type:'bar',data:{labels:Object.keys(td),datasets:[{data:Object.values(td),backgroundColor:'rgba(167,139,250,.3)',borderColor:'#a78bfa',borderWidth:1,borderRadius:4}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{ticks:{color:'#94a3b8',font:{size:10}},grid:{color:'rgba(255,255,255,.05)'}},x:{ticks:{color:'#94a3b8',font:{size:8},maxRotation:45},grid:{display:false}}}}});
+</script>
+{% endblock %}

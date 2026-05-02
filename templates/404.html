@@ -1,0 +1,21 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Page Not Found | T-Vault</title>
+  <link rel="stylesheet" href="{% static 'css/landing.css' %}">
+</head>
+<body class="tv-page">
+  <main class="not-found-page">
+    <span class="eyebrow">404</span>
+    <h1>This route is outside the vault.</h1>
+    <p>The page you requested does not exist or has moved. Use the public navigation below to continue.</p>
+    <div>
+      <a href="{% url 'home:landing' %}" class="tv-primary-btn">Back Home</a>
+      <a href="{% url 'users:login' %}" class="tv-secondary-btn">Access Vault</a>
+    </div>
+  </main>
+</body>
+</html>

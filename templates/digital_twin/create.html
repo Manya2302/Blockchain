@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% block title %}Create Digital Twin{% endblock %}
+{% block nav_dtwin %}active{% endblock %}
+{% block breadcrumb %}<a href="{% url 'digital_twin:dashboard' %}">Digital Twins</a> / Create{% endblock %}
+{% block content %}
+<div style="max-width:560px;margin:0 auto;">
+<div class="card">
+  <div class="card-header"><div class="card-title">🖥 Create Digital Twin</div></div>
+  <form method="post" style="margin-top:16px;">{% csrf_token %}
+    <div class="form-group"><label class="form-label">Twin Name *</label><input name="name" class="form-control" placeholder="Enterprise HQ Network" required></div>
+    <div class="form-group"><label class="form-label">Infrastructure Type</label>
+      <select name="twin_type" class="form-control">{% for val,lbl in twin_types %}<option value="{{ val }}">{{ lbl }}</option>{% endfor %}</select></div>
+    <div style="background:rgba(167,139,250,.06);border:1px solid rgba(167,139,250,.15);border-radius:var(--r-md);padding:12px;font-size:12px;color:var(--text-2);margin:12px 0;">
+      TAP-DEV will auto-generate a virtual network topology, assign assets, identify vulnerabilities, and prepare the simulation environment.
+    </div>
+    <button type="submit" class="btn btn-primary" style="width:100%;">Create Digital Twin</button>
+  </form>
+</div>
+</div>
+{% endblock %}

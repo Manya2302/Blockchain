@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% block title %}Billing Admin{% endblock %}{% block nav_billing %}active{% endblock %}
+{% block breadcrumb %}<a href="{% url 'billing:dashboard' %}">Billing</a> / Admin Overview{% endblock %}
+{% block content %}
+<div class="page-header" style="margin-bottom:24px;">
+  <div class="page-title">Billing Admin</div>
+  <div style="background:linear-gradient(135deg,rgba(0,212,255,.1),rgba(139,92,246,.08));border:1px solid rgba(0,212,255,.2);border-radius:var(--r-md);padding:12px 20px;text-align:center;">
+    <div style="font-size:28px;font-weight:800;color:var(--accent);">${{ monthly_revenue|floatformat:0 }}</div>
+    <div style="font-size:11px;color:var(--text-3);">Monthly Recurring Revenue</div>
+  </div>
+</div>
+<div class="stats-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:20px;">
+  <div class="stat-card"><div class="stat-value">{{ total_orgs }}</div><div class="stat-label">Organizations</div></div>
+  <div class="stat-card"><div class="stat-value risk-safe">{{ active_subs }}</div><div class="stat-label">Active Plans</div></div>
+  <div class="stat-card"><div class="stat-value" style="color:#f59e0b;">{{ trial_subs }}</div><div class="stat-label">On Trial</div></div>
+</div>
+<div class="card">
+  <div class="card-header"><div class="card-title">Organization Subscriptions</div></div>
+  <table class="pred-table" style="margin-top:8px;">
+    <thead><tr><th>Organization</th><th>Plan</th><th>Status</th><th>MRR</th><th>Days Left</th><th>Action</th></tr></thead>
+    <tbody>{% for sub in subs %}
+    <tr>
+      <td style="font-weight:600;">{{ sub.organization.name|truncatechars:30 }}</td>
+      <td><span style="font-family:var(--font-mono);font-size:11px;background:var(--accent-dim);color:var(--accent);padding:2px 8px;border-radius:4px;">{{ sub.plan.name }}</span></td>
+      <td><span class="org-status-pill {{ sub.status|lower }}">{{ sub.status }}</span></td>
+      <td style="font-weight:600;color:var(--accent);">${{ sub.plan.price_month }}</td>
+      <td style="font-family:var(--font-mono);font-size:11px;">{{ sub.days_remaining }}d</td>
+      <td>
+        <form method="post" action="{% url 'billing:change_plan' sub.organization.id %}" style="display:flex;gap:4px;">{% csrf_token %}
+          <select name="plan" class="form-control" style="font-size:11px;padding:3px 6px;height:auto;">{% for plan in plans %}<option value="{{ plan.name }}" {% if plan.name == sub.plan.name %}selected{% endif %}>{{ plan.name }}</option>{% endfor %}</select>
+          <button type="submit" class="btn btn-ghost" style="font-size:11px;padding:4px 8px;white-space:nowrap;">Update</button>
+        </form>
+      </td>
+    </tr>{% endfor %}</tbody>
+  </table>
+</div>
+{% endblock %}

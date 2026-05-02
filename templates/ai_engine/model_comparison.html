@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+{% block title %}Model Comparison{% endblock %}
+{% block nav_ai %}active{% endblock %}
+{% block breadcrumb %}<a href="{% url 'ai:dashboard' %}">AI Engine</a> / Model Comparison{% endblock %}
+
+{% block content %}
+<div class="page-header" style="margin-bottom:24px;">
+  <div class="page-header-left">
+    <div class="page-title">Model Performance Comparison</div>
+    <div class="page-subtitle">BiLSTM vs CNN+BiLSTM vs Random Forest Hybrid — Accuracy, F1, ROC-AUC, Confusion Matrices</div>
+  </div>
+  {% if request.user.profile.role == 'ADMIN' %}
+  <form method="post" action="{% url 'ai:train' %}">{% csrf_token %}
+    <button type="submit" class="btn-ai-report">⚡ Retrain Models</button>
+  </form>
+  {% endif %}
+</div>
+
+<!-- Model Cards -->
+<div class="model-cards" style="margin-bottom:28px;">
+  {% for m in model_data %}
+  <div class="model-card {% if m.is_active %}active{% endif %}">
+    <div class="model-card-header">
+      <div class="model-type-icon">{% if 'BiLSTM' in m.type %}🧠{% elif 'CNN' in m.type %}🔬{% else %}🌲{% endif %}</div>
+      <div>
+        <div class="model-type-label">{{ m.type }}</div>
+        <div class="model-version">{{ m.version }}</div>
+      </div>
+      {% if m.is_active %}<span class="model-active-tag">ACTIVE</span>{% endif %}
+    </div>
+
+    <!-- Metric grid -->
+    <div class="metric-grid-2">
+      <div class="metric-mini"><div class="metric-mini-label">Accuracy</div><div class="metric-mini-val">{{ m.accuracy }}%</div></div>
+      <div class="metric-mini"><div class="metric-mini-label">F1 Score</div><div class="metric-mini-val">{{ m.f1 }}%</div></div>
+      <div class="metric-mini"><div class="metric-mini-label">Precision</div><div class="metric-mini-val">{{ m.precision }}%</div></div>
+      <div class="metric-mini"><div class="metric-mini-label">Recall</div><div class="metric-mini-val">{{ m.recall }}%</div></div>
+    </div>
+
+    <!-- AUC bar -->
+    <div style="margin-top:12px;">
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-3);margin-bottom:4px;"><span>ROC-AUC</span><span>{{ m.auc }}%</span></div>
+      <div style="height:6px;background:var(--bg-3);border-radius:3px;overflow:hidden;">
+        <div style="height:100%;border-radius:3px;background:linear-gradient(90deg,#8b5cf6,#00d4ff);width:{{ m.auc }}%;"></div>
+      </div>
+    </div>
+
+    <!-- Confusion matrix -->
+    {% if m.confusion_matrix %}
+    <div style="margin-top:14px;">
+      <div style="font-size:11px;color:var(--text-3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em;">Confusion Matrix</div>
+      <div class="cm-grid">
+        <div class="cm-cell cm-tn"><div class="cm-val">{{ m.confusion_matrix.tn }}</div><div class="cm-label">TN</div></div>
+        <div class="cm-cell cm-fp"><div class="cm-val">{{ m.confusion_matrix.fp }}</div><div class="cm-label">FP</div></div>
+        <div class="cm-cell cm-fn"><div class="cm-val">{{ m.confusion_matrix.fn }}</div><div class="cm-label">FN</div></div>
+        <div class="cm-cell cm-tp"><div class="cm-val">{{ m.confusion_matrix.tp }}</div><div class="cm-label">TP</div></div>
+      </div>
+    </div>
+    {% endif %}
+
+    <div style="margin-top:12px;font-size:11px;color:var(--text-3);font-family:var(--font-mono);">{{ m.samples }} training samples</div>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Radar / Multi-metric chart -->
+<div class="card">
+  <div class="card-header"><div class="card-title">Performance Radar</div></div>
+  <canvas id="radarChart" height="100" style="max-height:360px;"></canvas>
+</div>
+
+<script>
+const modelData = {{ model_data_json|safe }};
+const labels = ['Accuracy','F1 Score','Precision','Recall','AUC-ROC'];
+const colors = ['rgba(0,212,255,.7)','rgba(139,92,246,.7)','rgba(16,185,129,.7)'];
+
+new Chart(document.getElementById('radarChart'), {
+  type:'radar',
+  data:{
+    labels,
+    datasets: modelData.map((m,i) => ({
+      label: m.type,
+      data: [m.accuracy, m.f1, m.precision, m.recall, m.auc],
+      borderColor: colors[i] || colors[0],
+      backgroundColor: colors[i]?.replace('.7','.1') || 'rgba(0,212,255,.1)',
+      borderWidth: 2,
+      pointBackgroundColor: colors[i] || colors[0],
+    }))
+  },
+  options:{
+    responsive:true,
+    scales:{r:{min:80,max:100,ticks:{backdropColor:'transparent',color:'#94a3b8',font:{size:10}},grid:{color:'rgba(255,255,255,.08)'},pointLabels:{color:'#e2e8f0',font:{size:12}}}},
+    plugins:{legend:{labels:{color:'#e2e8f0',font:{size:12}}}}
+  }
+});
+</script>
+{% endblock %}

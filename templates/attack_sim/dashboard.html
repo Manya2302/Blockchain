@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+{% block title %}Attack Simulator{% endblock %}
+{% block nav_attack %}active{% endblock %}
+{% block breadcrumb %}Temporal Attack Simulator{% endblock %}
+
+{% block content %}
+<div class="page-header" style="margin-bottom:24px;">
+  <div class="page-header-left">
+    <div class="page-title">⚡ Temporal Attack Simulator</div>
+    <div class="page-subtitle">Inject real attack patterns into evidence chains to validate AI detection capability</div>
+  </div>
+</div>
+
+<!-- Stats -->
+<div class="stats-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:24px;">
+  <div class="stat-card"><div class="stat-value">{{ stats.total }}</div><div class="stat-label">Simulations Run</div></div>
+  <div class="stat-card"><div class="stat-value risk-safe">{{ stats.detected }}</div><div class="stat-label">AI Detected</div></div>
+  <div class="stat-card"><div class="stat-value risk-critical">{{ stats.evaded }}</div><div class="stat-label">AI Evaded</div></div>
+  <div class="stat-card"><div class="stat-value" style="color:var(--accent);">{{ stats.detection_rate }}%</div><div class="stat-label">Detection Rate</div></div>
+</div>
+
+<div class="two-col" style="gap:20px;">
+  <!-- Launch form -->
+  <div class="card">
+    <div class="card-header"><div class="card-title">Launch New Simulation</div></div>
+    <form method="post" action="{% url 'attack_sim:run' %}">{% csrf_token %}
+
+      <div class="form-group" style="margin-top:16px;">
+        <label class="form-label">Target Evidence</label>
+        <select name="evidence_id" class="form-control" required>
+          <option value="">— Select evidence —</option>
+          {% for ev in evidence_list %}
+          <option value="{{ ev.id }}">{{ ev.title|truncatechars:50 }} ({{ ev.status }})</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-group" style="margin-top:16px;">
+        <label class="form-label">Attack Type</label>
+        <div class="attack-type-grid" id="attackTypeGrid">
+          {% for val, label in attack_types %}
+          <label class="attack-type-btn" onclick="selectAttack('{{ val }}', this)">
+            <input type="radio" name="attack_type" value="{{ val }}" style="display:none;" required>
+            <div class="attack-type-btn-icon">
+              {% if val == 'TIMESTAMP_TAMPER' %}🕐
+              {% elif val == 'LOG_DELETION' %}🗑
+              {% elif val == 'REPLAY_ATTACK' %}🔄
+              {% elif val == 'FORGED_UPLOAD' %}📤
+              {% elif val == 'DUPLICATE_EVENTS' %}⧉
+              {% elif val == 'DELAYED_VERIFY' %}⏳
+              {% elif val == 'HASH_COLLISION' %}💥
+              {% elif val == 'PRIVILEGE_ESCALATION' %}🔑
+              {% elif val == 'CHAIN_TRUNCATION' %}✂
+              {% elif val == 'METADATA_FORGE' %}📝
+              {% endif %}
+            </div>
+            <div class="attack-type-btn-name">{{ label }}</div>
+            <div class="attack-type-btn-desc">Inject {{ label|lower }} pattern</div>
+          </label>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="form-group" style="margin-top:16px;">
+        <label class="form-label">Description (optional)</label>
+        <textarea name="description" class="form-control" rows="2" placeholder="Simulation notes..."></textarea>
+      </div>
+
+      <button type="submit" class="btn btn-primary" style="width:100%;margin-top:16px;background:linear-gradient(135deg,#8b5cf6,#06b6d4);">⚡ Launch Simulation</button>
+    </form>
+  </div>
+
+  <!-- Recent simulations -->
+  <div class="card">
+    <div class="card-header"><div class="card-title">Simulation History</div></div>
+    {% if sims %}
+    <div style="display:flex;flex-direction:column;gap:6px;margin-top:8px;">
+      {% for s in sims %}
+      <a href="{% url 'attack_sim:detail' s.id %}" style="text-decoration:none;">
+        <div style="padding:10px 12px;border-radius:var(--r-sm);border:1px solid var(--border);background:var(--bg-2);display:flex;align-items:center;gap:12px;transition:var(--transition);" onmouseover="this.style.borderColor='rgba(0,212,255,.3)'" onmouseout="this.style.borderColor='var(--border)'">
+          <div style="font-size:18px;">
+            {% if s.attack_type == 'TIMESTAMP_TAMPER' %}🕐{% elif s.attack_type == 'LOG_DELETION' %}🗑{% elif s.attack_type == 'REPLAY_ATTACK' %}🔄{% elif s.attack_type == 'FORGED_UPLOAD' %}📤{% else %}⚡{% endif %}
+          </div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:12px;font-weight:600;color:var(--text);">{{ s.get_attack_type_display }}</div>
+            <div style="font-size:11px;color:var(--text-3);">{{ s.target_evidence.title|truncatechars:30 }} · {{ s.initiated_at|date:"M d H:i" }}</div>
+          </div>
+          <span class="sim-status-pill {{ s.status }}">{{ s.status }}</span>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state" style="padding:40px;"><div class="empty-icon">⚡</div><div class="empty-title">No simulations yet</div></div>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+function selectAttack(val, el) {
+  document.querySelectorAll('.attack-type-btn').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+}
+</script>
+{% endblock %}

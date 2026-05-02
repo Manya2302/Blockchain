@@ -1,0 +1,51 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Register | T-Vault</title>
+  <link rel="stylesheet" href="{% static 'css/auth.css' %}">
+</head>
+<body class="vault-auth register-auth">
+  <a href="{% url 'home:landing' %}" class="auth-home">T-Vault</a>
+  <main class="auth-shell auth-shell-wide">
+    <section class="auth-panel">
+      <div class="auth-mark"><span></span></div>
+      <span class="auth-eyebrow">Initialize account</span>
+      <h1>Create your vault identity.</h1>
+      <p class="auth-intro">Register a workspace identity for temporal attack analysis, forensic evidence chains, and blockchain validation.</p>
+
+      <form method="post" class="auth-form register-grid" data-auth-form data-register-form novalidate>
+        {% csrf_token %}
+        <label class="auth-field"><span>First name</span>{{ form.first_name }}<small data-field-hint>Optional profile name.</small></label>
+        <label class="auth-field"><span>Last name</span>{{ form.last_name }}<small data-field-hint>Optional profile name.</small></label>
+        <label class="auth-field"><span>Username</span>{{ form.username }}<small data-field-hint>At least 3 characters.</small>{% if form.username.errors %}<strong>{{ form.username.errors.0 }}</strong>{% endif %}</label>
+        <label class="auth-field"><span>Email</span>{{ form.email }}<small data-field-hint>Use a valid email address.</small></label>
+        <label class="auth-field"><span>Password</span>{{ form.password }}<button class="field-toggle" type="button" data-toggle-password>Show</button><small data-field-hint>Use 6+ characters.</small>{% if form.password.errors %}<strong>{{ form.password.errors.0 }}</strong>{% endif %}</label>
+        <label class="auth-field"><span>Confirm password</span>{{ form.password2 }}<button class="field-toggle" type="button" data-toggle-password>Show</button><small data-field-hint>Must match password.</small></label>
+        <label class="auth-field"><span>Role</span>{{ form.role }}<small data-field-hint>Select your workspace role.</small></label>
+        <label class="auth-field"><span>Organization</span>{{ form.organization }}<small data-field-hint>Optional company or lab.</small></label>
+        {% if form.non_field_errors %}<div class="auth-error register-span">{{ form.non_field_errors.0 }}</div>{% endif %}
+        <button type="submit" class="auth-submit register-span">Create Account</button>
+      </form>
+
+      <div class="auth-links">
+        <a href="{% url 'users:login' %}">Already have access?</a>
+        <a href="{% url 'users:forgot_password' %}">Forgot password / OTP</a>
+      </div>
+    </section>
+
+    <aside class="auth-visual register-visual" data-auth-visual aria-hidden="true">
+      <div class="scan-card">
+        <span class="scan-line"></span>
+        <div class="scan-node n1"></div><div class="scan-node n2"></div><div class="scan-node n3"></div>
+        <div class="typing-ring"><i></i><i></i><i></i><i></i></div>
+        <h2>Vault Provisioning</h2>
+        <p>Your identity is mapped to a verified role-based chain of custody workspace. OTP verification activates access.</p>
+      </div>
+    </aside>
+  </main>
+  <script src="{% static 'js/auth.js' %}"></script>
+</body>
+</html>

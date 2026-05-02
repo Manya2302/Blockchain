@@ -1,0 +1,40 @@
+{% extends 'base.html' %}{% block title %}Set Expiry — {{ ev.title }}{% endblock %}{% block nav_evidence %}active{% endblock %}
+{% block breadcrumb %}Evidence / <a href="{% url 'evidence:detail' ev.pk %}">{{ ev.title|truncatechars:20 }}</a> / Set Expiry{% endblock %}
+{% block content %}
+<div style="max-width:600px;margin:0 auto;">
+<div class="card">
+  <div class="card-header"><div class="card-title">⏰ Self-Destruct Policy</div></div>
+  <div style="background:rgba(249,115,22,.06);border:1px solid rgba(249,115,22,.15);border-radius:var(--r-md);padding:14px;margin:16px 0;font-size:12px;color:var(--text-2);">
+    <strong style="color:#f97316;">How it works:</strong> Set a time-based expiry. When the expiry time is reached, the file content is permanently deleted, IPFS pins are removed, and blockchain records are updated. The audit trail and event timeline remain intact.
+  </div>
+
+  <div style="background:var(--bg-2);border-radius:var(--r-md);padding:12px;margin-bottom:16px;">
+    <div style="font-size:11px;color:var(--text-3);margin-bottom:6px;">Target Evidence</div>
+    <div style="font-size:14px;font-weight:600;">{{ ev.title }}</div>
+    <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-3);margin-top:4px;">SHA-256: {{ ev.sha256_hash|truncatechars:32 }}...</div>
+    {% if ev.expires_at %}
+    <div style="font-size:12px;color:#f97316;margin-top:6px;">Current expiry: {{ ev.expires_at|date:"M d, Y H:i" }}</div>
+    {% endif %}
+  </div>
+
+  <form method="post">{% csrf_token %}
+    <div class="form-group">
+      <label class="form-label">Expire After (hours from now)</label>
+      <input type="number" name="expiry_hours" class="form-input" placeholder="e.g., 24, 168 (1 week), 720 (1 month)" min="1" max="8760">
+    </div>
+    <div style="text-align:center;font-size:12px;color:var(--text-3);margin:8px 0;">— or —</div>
+    <div class="form-group">
+      <label class="form-label">Set Exact Expiry Date</label>
+      <input type="datetime-local" name="expiry_date" class="form-input">
+    </div>
+
+    <div style="display:flex;gap:10px;margin-top:16px;">
+      <button type="submit" name="action" value="set" class="btn btn-primary" style="flex:1;">⏰ Set Expiry</button>
+      {% if ev.expiry_enabled %}
+      <button type="submit" name="action" value="remove" class="btn btn-ghost" style="flex:1;" onclick="return confirm('Remove expiry policy? Document will persist indefinitely.')">∞ Remove Expiry</button>
+      {% endif %}
+    </div>
+  </form>
+</div>
+</div>
+{% endblock %}

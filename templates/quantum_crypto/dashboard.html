@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+{% block title %}Quantum Crypto{% endblock %}
+{% block nav_qcrypto %}active{% endblock %}
+{% block breadcrumb %}Quantum-Resistant Cryptography{% endblock %}
+{% block content %}
+<div class="p5-hero">
+  <div class="p5-hero-label">Phase 5 · Post-Quantum Security · NIST PQC Standards</div>
+  <div class="p5-hero-title">🔒 Quantum-Resistant Cryptography Engine</div>
+  <div class="p5-hero-sub">CRYSTALS-Dilithium · CRYSTALS-Kyber · FALCON · SPHINCS+ · Future-proof evidence signing</div>
+</div>
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;">
+  <div class="p5-stat"><div class="p5-stat-val">{{ total }}</div><div class="p5-stat-label">Total Signatures</div></div>
+  <div class="p5-stat"><div class="p5-stat-val" style="color:#10b981;">{{ valid }}</div><div class="p5-stat-label">Valid</div></div>
+  <div class="p5-stat"><div class="p5-stat-val" style="color:#a78bfa;">{{ by_algo|length }}</div><div class="p5-stat-label">Algorithms Used</div></div>
+</div>
+<div style="display:grid;grid-template-columns:2fr 1fr;gap:20px;">
+  <div class="card">
+    <div class="card-header"><div class="card-title">Post-Quantum Signatures</div></div>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-top:10px;">
+      {% for sig in sigs %}
+      <div class="quantum-card">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+          <span class="algo-badge">⚛ {{ sig.get_algorithm_display }}</span>
+          <span class="nist-level">✓ NIST Level {{ sig.security_level }}</span>
+          <span style="flex:1;font-size:12px;color:var(--text-2);">{{ sig.evidence.title|truncatechars:40 }}</span>
+          <span style="font-size:11px;color:var(--text-3);">{{ sig.created_at|date:"M d, Y" }}</span>
+        </div>
+        <div class="lattice-viz" style="margin-top:8px;">
+          PK: {{ sig.public_key_hash|truncatechars:32 }}...<br>
+          SIG: {{ sig.signature_hash|truncatechars:32 }}...
+        </div>
+      </div>
+      {% empty %}
+      <div style="text-align:center;padding:32px;color:var(--text-3);font-size:13px;">No quantum signatures yet. Sign evidence from the evidence detail page.</div>
+      {% endfor %}
+    </div>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:16px;">
+    <div class="card">
+      <div class="card-header"><div class="card-title">Algorithm Distribution</div></div>
+      {% for algo, count in by_algo.items %}
+      <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span class="algo-badge" style="font-size:9px;">{{ algo }}</span>
+        <div style="flex:1;height:6px;background:var(--bg-3);border-radius:3px;overflow:hidden;">
+          <div style="height:100%;background:linear-gradient(90deg,#7c3aed,#a78bfa);width:{{ count }}0%;border-radius:3px;"></div>
+        </div>
+        <span style="font-size:11px;font-family:var(--font-mono);">{{ count }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    <div class="card" style="background:rgba(167,139,250,.04);border-color:rgba(167,139,250,.2);">
+      <div class="card-header"><div class="card-title">Why Post-Quantum?</div></div>
+      <div style="font-size:12px;color:var(--text-2);line-height:1.7;margin-top:10px;">
+        Current RSA-2048 and ECDSA signatures will be broken by quantum computers running Shor's algorithm.<br><br>
+        CRYSTALS-Dilithium uses lattice-based hardness problems that remain secure even against quantum adversaries.<br><br>
+        TAP-DEV Phase 5 proactively protects all evidence with NIST-standardized post-quantum signatures.
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

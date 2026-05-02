@@ -1,0 +1,35 @@
+{% extends 'base.html' %}{% block title %}Manage Users{% endblock %}
+{% block breadcrumb %}Admin / <strong>Users</strong>{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div><h1 class="page-title">Manage Users</h1><p class="page-sub">{{ users|length }} registered accounts</p></div>
+  <a href="{% url 'users:register' %}" class="btn btn-primary">+ Add User</a>
+</div>
+<div class="filter-bar"><form method="get" class="filter-form">
+  <input type="text" name="q" value="{{ search }}" class="form-input filter-search" placeholder="Search users…">
+  <select name="role" class="form-input filter-select" onchange="this.form.submit()">
+    <option value="">All Roles</option>
+    {% for val,label in roles %}<option value="{{ val }}" {% if role == val %}selected{% endif %}>{{ label }}</option>{% endfor %}
+  </select>
+  <button type="submit" class="btn btn-ghost">Filter</button>
+  {% if search or role %}<a href="{% url 'dashboard:user_list' %}" class="btn btn-ghost">Clear</a>{% endif %}
+</form></div>
+<div class="card">
+  <table class="data-table">
+    <thead><tr><th>User</th><th>Role</th><th>Org / Dept</th><th>Status</th><th>Last Seen</th><th>Joined</th><th>Actions</th></tr></thead>
+    <tbody>{% for u in users %}
+      <tr>
+        <td><div class="user-cell"><div class="user-avatar-sm">{% if u.profile.profile_image %}<img src="{{ u.profile.profile_image.url }}" alt="">{% else %}{{ u.username|slice:":1"|upper }}{% endif %}</div><div><div style="font-weight:600;font-size:13px;">{{ u.username }}</div><div style="font-size:11px;color:var(--text-3);">{{ u.get_full_name|default:"—" }}</div></div></div></td>
+        <td><span class="role-badge role-{{ u.profile.role|lower }}">{{ u.profile.role }}</span></td>
+        <td style="font-size:12px;color:var(--text-2);">{{ u.profile.organization|default:"—" }}<br><span style="color:var(--text-3);">{{ u.profile.department|default:"" }}</span></td>
+        <td>{% if u.is_active %}<span class="status-badge status-verified">Active</span>{% else %}<span class="status-badge status-flagged">Inactive</span>{% endif %}</td>
+        <td style="color:var(--text-3);font-size:11px;font-family:var(--font-mono);">{{ u.profile.last_seen|date:"M d H:i"|default:"Never" }}</td>
+        <td style="color:var(--text-3);font-size:12px;">{{ u.date_joined|date:"M d, Y" }}</td>
+        <td><div class="action-group">
+          <a href="{% url 'dashboard:user_edit' u.pk %}" class="btn btn-xs btn-ghost">Edit</a>
+          {% if u != request.user %}<a href="{% url 'dashboard:user_delete' u.pk %}" class="btn btn-xs" style="background:var(--red-dim);color:var(--red);border:1px solid rgba(239,68,68,.2);">Del</a>{% endif %}
+        </div></td>
+      </tr>{% endfor %}
+    </tbody>
+  </table>
+</div>{% endblock %}

@@ -1,0 +1,63 @@
+{% extends 'base.html' %}{% block title %}Evidence{% endblock %}{% block nav_evidence %}active{% endblock %}
+{% block breadcrumb %}<strong>Evidence Vault</strong>{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div><h1 class="page-title">Evidence Vault</h1><p class="page-sub">All evidence items with trust scoring &amp; chain status</p></div>
+  <a href="{% url 'evidence:upload' %}" class="btn btn-primary">+ Upload Evidence</a>
+</div>
+<div class="filter-bar">
+  <form method="get" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;width:100%;">
+    <input name="q" value="{{ search }}" class="form-input" style="flex:1;max-width:260px;" placeholder="Search evidence…">
+    <select name="status" class="form-input" style="width:auto;" onchange="this.form.submit()">
+      <option value="">All Status</option>
+      {% for val,label in status_choices %}<option value="{{ val }}" {% if status == val %}selected{% endif %}>{{ label }}</option>{% endfor %}
+    </select>
+    <select name="trust" class="form-input" style="width:auto;" onchange="this.form.submit()">
+      <option value="">All Trust</option>
+      <option value="high" {% if trust == 'high' %}selected{% endif %}>High (≥80)</option>
+      <option value="medium" {% if trust == 'medium' %}selected{% endif %}>Medium (50-79)</option>
+      <option value="low" {% if trust == 'low' %}selected{% endif %}>Low (&lt;50)</option>
+    </select>
+    <select name="expiry" class="form-input" style="width:auto;" onchange="this.form.submit()">
+      <option value="">All Expiry</option>
+      <option value="active" {% if expiry_filter == 'active' %}selected{% endif %}>⏰ Active Expiry</option>
+      <option value="expired" {% if expiry_filter == 'expired' %}selected{% endif %}>⊘ Expired</option>
+      <option value="no_expiry" {% if expiry_filter == 'no_expiry' %}selected{% endif %}>∞ No Expiry</option>
+    </select>
+    <button type="submit" class="btn btn-ghost btn-sm">Filter</button>
+  </form>
+</div>
+<div class="ev-list">
+  {% for ev in evidences %}
+  <a href="{% url 'evidence:detail' ev.pk %}" class="ev-row {% if ev.is_expired %}ev-expired{% endif %}">
+    <div class="ev-icon {% if ev.is_expired %}ev-icon-expired{% endif %}">
+      {% if ev.is_expired %}⊘{% elif ev.status == 'VERIFIED' %}✓{% elif ev.status == 'FLAGGED' %}⚑{% else %}◈{% endif %}
+    </div>
+    <div class="ev-body">
+      <div class="ev-title">{{ ev.title }}</div>
+      <div class="ev-meta">
+        #{{ ev.pk }} · v{{ ev.version }} · {{ ev.uploader.username }} · {{ ev.created_at|date:"M d, Y" }}
+        {% if ev.case_id %} · {{ ev.case_id }}{% endif %}
+      </div>
+    </div>
+    <div class="ev-badges">
+      <span class="status-badge {{ ev.get_status_class }}">{{ ev.status }}</span>
+      <span class="trust-badge {{ ev.get_trust_class }}">{{ ev.trust_score }}</span>
+      {% if ev.is_blockchain_anchored %}<span class="chain-badge" style="font-size:9px;">⬡</span>{% endif %}
+      {% if ev.expiry_enabled %}
+        {% if ev.is_expired %}
+        <span style="padding:2px 6px;font-size:9px;font-weight:600;border-radius:3px;background:rgba(239,68,68,.1);color:#ef4444;border:1px solid rgba(239,68,68,.2);">⊘ EXPIRED</span>
+        {% else %}
+        <span style="padding:2px 6px;font-size:9px;font-weight:600;border-radius:3px;background:rgba(249,115,22,.1);color:#f97316;border:1px solid rgba(249,115,22,.2);">⏰ EXPIRY</span>
+        {% endif %}
+      {% endif %}
+    </div>
+  </a>{% empty %}
+  <div class="empty-state" style="padding:60px;">
+    <div class="empty-icon">◈</div>
+    <div class="empty-title">No evidence found</div>
+    <div class="empty-sub">Upload your first piece of evidence to start the cryptographic chain.</div>
+    <a href="{% url 'evidence:upload' %}" class="btn btn-primary" style="margin-top:16px;">Upload Evidence →</a>
+  </div>{% endfor %}
+</div>
+{% endblock %}

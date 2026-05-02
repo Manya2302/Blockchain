@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% block title %}Federated AI{% endblock %}{% block nav_fed %}active{% endblock %}
+{% block breadcrumb %}Federated Learning AI{% endblock %}
+{% block content %}
+<div class="page-header" style="margin-bottom:20px;">
+  <div class="page-header-left"><div class="page-title">Federated Learning AI Network</div>
+    <div class="page-subtitle">Privacy-preserving distributed model training · Differential privacy ε={{ request.META.REMOTE_ADDR|default:"1.0" }}</div></div>
+</div>
+{% if global_model %}
+<div class="card" style="background:linear-gradient(135deg,rgba(139,92,246,.06),rgba(0,212,255,.04));border-color:rgba(139,92,246,.2);margin-bottom:20px;">
+  <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;">
+    <div style="font-size:40px;">🌐</div>
+    <div style="flex:1;">
+      <div style="font-size:11px;color:var(--text-3);font-family:var(--font-mono);">GLOBAL FEDERATED MODEL</div>
+      <div style="font-size:20px;font-weight:700;">{{ global_model.version }}</div>
+      <div style="font-size:13px;color:var(--text-2);">{{ global_model.rounds_completed }} aggregation rounds · Last updated {{ global_model.last_aggregated|date:"M d, H:i"|default:"Never" }}</div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;min-width:200px;">
+      <div style="text-align:center;"><div style="font-size:26px;font-weight:700;color:#10b981;">{{ global_model.global_accuracy|floatformat:1 }}%</div><div style="font-size:10px;color:var(--text-3);">Global Accuracy</div></div>
+      <div style="text-align:center;"><div style="font-size:26px;font-weight:700;color:var(--accent);">{{ global_model.global_f1|floatformat:1 }}%</div><div style="font-size:10px;color:var(--text-3);">Global F1</div></div>
+    </div>
+  </div>
+</div>
+{% endif %}
+<div class="two-col" style="gap:20px;">
+  <div class="card">
+    <div class="card-header"><div class="card-title">Training Progress (24 rounds)</div></div>
+    <canvas id="fedChart" height="200" style="margin-top:12px;"></canvas>
+  </div>
+  <div class="card">
+    <div class="card-header"><div class="card-title">Privacy Guarantees</div></div>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-top:12px;">
+      <div style="display:flex;align-items:center;gap:10px;padding:10px;background:var(--bg-2);border-radius:var(--r-sm);"><span style="font-size:20px;">🔒</span><div><div style="font-size:13px;font-weight:600;">Differential Privacy</div><div style="font-size:11px;color:var(--text-3);">ε = 1.0 — Noise injection prevents data extraction</div></div></div>
+      <div style="display:flex;align-items:center;gap:10px;padding:10px;background:var(--bg-2);border-radius:var(--r-sm);"><span style="font-size:20px;">🔐</span><div><div style="font-size:13px;font-weight:600;">Gradient Encryption</div><div style="font-size:11px;color:var(--text-3);">All model updates encrypted before transmission</div></div></div>
+      <div style="display:flex;align-items:center;gap:10px;padding:10px;background:var(--bg-2);border-radius:var(--r-sm);"><span style="font-size:20px;">🌍</span><div><div style="font-size:13px;font-weight:600;">Secure Aggregation</div><div style="font-size:11px;color:var(--text-3);">Server never sees individual organization gradients</div></div></div>
+      <div style="display:flex;align-items:center;gap:10px;padding:10px;background:var(--bg-2);border-radius:var(--r-sm);"><span style="font-size:20px;">📊</span><div><div style="font-size:13px;font-weight:600;">{{ orgs_participating }} Organizations Participating</div><div style="font-size:11px;color:var(--text-3);">Each trains locally on private data only</div></div></div>
+    </div>
+  </div>
+</div>
+<script>
+const fedData = {{ accuracy_data|safe }};
+new Chart(document.getElementById('fedChart'),{type:'line',data:{labels:fedData.map(x=>'Round '+x.round),datasets:[{label:'Global Accuracy',data:fedData.map(x=>x.accuracy*100),borderColor:'#8b5cf6',backgroundColor:'rgba(139,92,246,.08)',borderWidth:2,tension:.4,fill:true,pointRadius:2}]},options:{responsive:true,scales:{y:{min:75,max:100,ticks:{color:'#94a3b8',font:{size:10},callback:v=>v+'%'},grid:{color:'rgba(255,255,255,.05)'}},x:{ticks:{color:'#94a3b8',font:{size:9},maxTicksLimit:8},grid:{display:false}}},plugins:{legend:{display:false}}}});
+</script>
+{% endblock %}

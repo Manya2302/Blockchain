@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ZKP Verification — TAP-DEV</title>
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/tapdev.css' %}">
+</head>
+<body>
+<div class="verify-hero">
+<div class="verify-card">
+  <div style="font-size:14px;font-weight:700;font-family:var(--font-mono);color:var(--text-3);margin-bottom:20px;">TAP-DEV · Zero-Knowledge Proof Verification</div>
+  <div class="verify-icon-wrap {% if valid %}valid{% else %}invalid{% endif %}">{% if valid %}✓{% else %}✕{% endif %}</div>
+  <div class="verify-title" style="color:{% if valid %}#10b981{% else %}#ef4444{% endif %};">{% if valid %}Proof Valid{% else %}Proof Invalid{% endif %}</div>
+  <div class="verify-sub">{% if valid %}Document authenticity verified cryptographically{% else %}This proof is invalid, expired, or not found{% endif %}</div>
+  {% if proof and valid %}
+  <div style="margin-top:20px;background:var(--bg-2);border-radius:var(--r-md);padding:16px;text-align:left;">
+    <div style="font-size:11px;color:var(--text-3);margin-bottom:10px;text-transform:uppercase;letter-spacing:.06em;">Disclosed Fields</div>
+    {% for key, val in proof.public_inputs.items %}
+    <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px;">
+      <span style="color:var(--text-3);">{{ key|title|cut:"_" }}</span><strong>{{ val }}</strong>
+    </div>{% endfor %}
+    <div style="font-size:11px;color:var(--text-3);margin-top:10px;">Use case: {{ proof.get_use_case_display }}</div>
+  </div>
+  <div style="margin-top:12px;padding:10px;background:rgba(16,185,129,.06);border-radius:var(--r-sm);border:1px solid rgba(16,185,129,.15);">
+    <div style="font-size:11px;color:#10b981;font-weight:600;">Zero-Knowledge Guarantee</div>
+    <div style="font-size:11px;color:var(--text-2);margin-top:3px;">Document content was NOT disclosed during this verification.</div>
+  </div>
+  {% endif %}
+  <div style="margin-top:20px;font-family:var(--font-mono);font-size:10px;color:var(--text-3);">Proof ID: {{ proof_id|truncatechars:24 }}...</div>
+  <a href="/" style="display:inline-block;margin-top:16px;font-size:12px;color:var(--accent);">← TAP-DEV Platform</a>
+</div>
+</div>
+</body></html>

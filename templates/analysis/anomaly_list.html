@@ -1,0 +1,42 @@
+{% extends 'base.html' %}{% block title %}Anomaly Report{% endblock %}{% block nav_analysis %}active{% endblock %}
+{% block breadcrumb %}<strong>Anomaly Report</strong>{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div><h1 class="page-title">Anomaly Report</h1><p class="page-sub">Open anomalies across all evidence chains</p></div>
+  <form method="get">
+    <select name="severity" class="form-input" style="width:auto;" onchange="this.form.submit()">
+      <option value="">All Severities</option>
+      <option value="HIGH" {% if severity == 'HIGH' %}selected{% endif %}>High</option>
+      <option value="MEDIUM" {% if severity == 'MEDIUM' %}selected{% endif %}>Medium</option>
+      <option value="LOW" {% if severity == 'LOW' %}selected{% endif %}>Low</option>
+    </select>
+  </form>
+</div>
+{% if anomalies %}
+<div class="card">
+  <table class="data-table">
+    <thead><tr><th>Severity</th><th>Type</th><th>Description</th><th>Evidence</th><th>Event</th><th>Detected</th><th>Actions</th></tr></thead>
+    <tbody>{% for a in anomalies %}
+      <tr style="{% if a.severity == 'HIGH' %}border-left:2px solid var(--red);{% elif a.severity == 'MEDIUM' %}border-left:2px solid var(--amber);{% endif %}">
+        <td><span class="sev-badge sev-{{ a.severity|lower }}">{{ a.severity }}</span></td>
+        <td style="font-weight:600;font-size:13px;">{{ a.get_anomaly_type_display }}</td>
+        <td style="font-size:12px;color:var(--text-2);">{{ a.description|truncatechars:70 }}</td>
+        <td><a href="{% url 'evidence:detail' a.evidence.pk %}" class="table-link">{{ a.evidence.title|truncatechars:22 }}</a></td>
+        <td style="font-family:var(--font-mono);font-size:11px;color:var(--text-3);">{% if a.related_event %}#{{ a.related_event.sequence_number }}{% else %}—{% endif %}</td>
+        <td style="font-family:var(--font-mono);font-size:11px;color:var(--text-3);">{{ a.detected_at|date:"M d H:i" }}</td>
+        <td><div class="action-group">
+          <a href="{% url 'evidence:detail' a.evidence.pk %}" class="btn btn-xs btn-ghost">View Chain</a>
+          <form method="post" action="{% url 'analysis:resolve' a.pk %}" style="display:inline;">{% csrf_token %}
+            <button class="btn btn-xs btn-success">Resolve</button>
+          </form>
+        </div></td>
+      </tr>{% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="card" style="text-align:center;padding:64px 32px;">
+  <div style="font-size:48px;margin-bottom:16px;color:var(--green);">✓</div>
+  <h3 style="font-family:var(--font-display);font-size:20px;margin-bottom:8px;">All Clear</h3>
+  <p style="color:var(--text-2);">No open anomalies. All evidence chains are nominal.</p>
+</div>{% endif %}{% endblock %}

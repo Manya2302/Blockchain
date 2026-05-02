@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+{% block title %}Legal AI{% endblock %}
+{% block nav_legalai %}active{% endblock %}
+{% block breadcrumb %}Autonomous Legal AI{% endblock %}
+{% block content %}
+<div class="p5-hero">
+  <div class="p5-hero-label">Phase 5 · Court-Ready · Multi-Jurisdiction · AI-Generated</div>
+  <div class="p5-hero-title">⚖ Autonomous Legal Document Generator</div>
+  <div class="p5-hero-sub">Court reports · Insurance claims · Chain of custody · Expert testimony · GDPR breach notifications</div>
+</div>
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;">
+  <div class="p5-stat"><div class="p5-stat-val">{{ total }}</div><div class="p5-stat-label">Documents Generated</div></div>
+  <div class="p5-stat"><div class="p5-stat-val" style="color:#10b981;">{{ approved }}</div><div class="p5-stat-label">Approved</div></div>
+  <div class="p5-stat"><div class="p5-stat-val" style="color:#a78bfa;">{{ by_type|length }}</div><div class="p5-stat-label">Document Types</div></div>
+</div>
+<div style="display:grid;grid-template-columns:2fr 1fr;gap:20px;">
+  <div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+      <h2 style="font-size:14px;font-weight:600;">Legal Documents</h2>
+      <a href="{% url 'legal_ai:generate' %}" class="btn btn-primary btn-sm" style="background:linear-gradient(135deg,#7c3aed,#db2777);">+ Generate Document</a>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      {% for doc in docs %}
+      <div class="legal-doc-card">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="font-size:24px;">📄</div>
+          <div style="flex:1;min-width:0;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px;">
+              <span class="inv-type-badge" style="font-size:10px;">{{ doc.get_doc_type_display }}</span>
+              <span class="jurisdiction-badge">{{ doc.jurisdiction }}</span>
+              {% if doc.generated_by_ai %}<span style="font-size:9px;background:rgba(167,139,250,.1);color:#a78bfa;padding:1px 6px;border-radius:6px;border:1px solid rgba(167,139,250,.2);">AI</span>{% endif %}
+            </div>
+            <div style="font-size:13px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ doc.title }}</div>
+            <div style="font-size:11px;color:var(--text-3);">{{ doc.generated_at|date:"M d, Y H:i" }} · {{ doc.word_count }} words · {{ doc.language|upper }}</div>
+          </div>
+          <div style="text-align:right;flex-shrink:0;">
+            <div class="doc-status {{ doc.status }}" style="font-size:12px;font-weight:700;">{{ doc.status }}</div>
+            <a href="{% url 'legal_ai:doc_detail' doc.id %}" class="btn btn-ghost" style="font-size:11px;padding:3px 8px;margin-top:4px;">View →</a>
+          </div>
+        </div>
+      </div>
+      {% empty %}
+      <div class="card" style="text-align:center;padding:48px;">
+        <div style="font-size:40px;">⚖</div>
+        <div style="font-size:16px;font-weight:600;margin-top:12px;">No legal documents yet</div>
+        <div style="font-size:13px;color:var(--text-2);margin:8px 0 16px;">Generate court-ready forensic documents from AI investigations.</div>
+        <a href="{% url 'legal_ai:generate' %}" class="btn btn-primary">Generate First Document</a>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:16px;">
+    <div class="card">
+      <div class="card-header"><div class="card-title">Document Types</div></div>
+      <canvas id="docChart" height="200" style="margin-top:10px;"></canvas>
+    </div>
+    <div class="card" style="background:rgba(124,58,237,.04);border-color:rgba(124,58,237,.2);">
+      <div class="card-header"><div class="card-title">Supported Jurisdictions</div></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:10px;">
+        {% for val,lbl in jurisdictions %}<span class="jurisdiction-badge" style="text-align:center;padding:4px;">{{ lbl }}</span>{% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+const bt = {{ by_type_json|safe }};
+new Chart(document.getElementById('docChart'),{type:'doughnut',data:{labels:Object.keys(bt),datasets:[{data:Object.values(bt),backgroundColor:['rgba(124,58,237,.3)','rgba(219,39,119,.25)','rgba(0,212,255,.25)','rgba(16,185,129,.25)','rgba(245,158,11,.25)'],borderWidth:1}]},options:{responsive:true,plugins:{legend:{position:'bottom',labels:{color:'#94a3b8',font:{size:9},boxWidth:10}}}}});
+</script>
+{% endblock %}

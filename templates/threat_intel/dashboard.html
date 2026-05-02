@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% block title %}Threat Intelligence{% endblock %}{% block nav_threat %}active{% endblock %}
+{% block breadcrumb %}Predictive Threat Intelligence{% endblock %}
+{% block content %}
+<div class="page-header" style="margin-bottom:20px;">
+  <div class="page-header-left"><div class="page-title">Predictive Threat Intelligence</div>
+    <div class="page-subtitle">AI-powered threat forecasting · Historical pattern analysis · Insider detection</div></div>
+  <form method="post" action="{% url 'threat_intel:predict' %}">{% csrf_token %}
+    <button type="submit" class="btn-ai-report">⚡ Run Live Prediction</button>
+  </form>
+</div>
+<div class="stats-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:20px;">
+  <div class="stat-card"><div class="stat-value risk-critical">{{ stats.critical }}</div><div class="stat-label">Critical Threats</div></div>
+  <div class="stat-card"><div class="stat-value risk-high">{{ stats.high }}</div><div class="stat-label">High Risk</div></div>
+  <div class="stat-card"><div class="stat-value">{{ stats.total }}</div><div class="stat-label">Total Predictions</div></div>
+  <div class="stat-card"><div class="stat-value" style="color:var(--accent);">{{ stats.avg_prob }}%</div><div class="stat-label">Avg Probability</div></div>
+</div>
+<div class="two-col" style="gap:20px;">
+  <div class="card">
+    <div class="card-header"><div class="card-title">Active Threat Predictions</div></div>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-top:12px;">
+      {% for pred in predictions %}
+      <div class="threat-card {{ pred.risk_level }}">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div style="flex:1;"><div style="font-size:13px;font-weight:700;color:{{ pred.risk_color }};">{{ pred.get_threat_type_display }}</div>
+            <div style="font-size:12px;color:var(--text-2);margin-top:3px;">{{ pred.predicted_window_hours }}h window · {{ pred.predicted_at|date:"M d H:i" }}</div></div>
+          <div style="text-align:right;"><div style="font-size:22px;font-weight:800;font-family:var(--font-head);color:{{ pred.risk_color }};">{{ pred.probability|floatformat:0 }}%</div>
+            <div style="font-size:10px;color:var(--text-3);">probability</div></div>
+        </div>
+        {% if pred.indicators %}
+        <div class="threat-indicators">
+          {% for ind in pred.indicators|slice:":3" %}<div class="indicator-item">{{ ind }}</div>{% endfor %}
+        </div>
+        {% endif %}
+      </div>
+      {% empty %}<div class="empty-state" style="padding:32px;"><div class="empty-icon">🛡</div><div class="empty-title">No threats predicted</div><div class="empty-sub">Run live prediction to analyze current patterns.</div></div>
+      {% endfor %}
+    </div>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:20px;">
+    <div class="card"><div class="card-header"><div class="card-title">Risk Distribution</div></div>
+      <canvas id="riskChart" height="180" style="margin-top:12px;"></canvas></div>
+    <div class="card"><div class="card-header"><div class="card-title">7-Day Threat Trend</div></div>
+      <canvas id="trendChart" height="140" style="margin-top:12px;"></canvas></div>
+  </div>
+</div>
+<script>
+const rd = {{ risk_dist_json|safe }};
+new Chart(document.getElementById('riskChart'),{type:'doughnut',data:{labels:Object.keys(rd),datasets:[{data:Object.values(rd),backgroundColor:['rgba(220,38,38,.3)','rgba(239,68,68,.3)','rgba(245,158,11,.3)','rgba(132,204,22,.3)'],borderColor:['#dc2626','#ef4444','#f59e0b','#84cc16'],borderWidth:2}]},options:{responsive:true,plugins:{legend:{labels:{color:'#94a3b8',font:{size:11}}}}}});
+const td = {{ trend_data_json|safe }};
+new Chart(document.getElementById('trendChart'),{type:'bar',data:{labels:td.map(x=>x.date),datasets:[{label:'Predictions',data:td.map(x=>x.count),backgroundColor:'rgba(239,68,68,.3)',borderColor:'#ef4444',borderWidth:1}]},options:{responsive:true,scales:{y:{ticks:{color:'#94a3b8',font:{size:10}},grid:{color:'rgba(255,255,255,.05)'}},x:{ticks:{color:'#94a3b8',font:{size:10}},grid:{display:false}}},plugins:{legend:{display:false}}}});
+</script>
+{% endblock %}

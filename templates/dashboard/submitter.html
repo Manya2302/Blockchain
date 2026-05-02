@@ -1,0 +1,146 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard{% endblock %}
+{% block nav_dash %}active{% endblock %}
+{% block breadcrumb %}<strong>Dashboard</strong>{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">My Workspace</h1>
+    <p class="page-sub">Welcome back, {{ request.user.get_full_name|default:request.user.username }}</p>
+  </div>
+  <a href="{% url 'evidence:upload' %}" class="btn btn-primary">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    Upload Evidence
+  </a>
+</div>
+
+<div class="stats-grid stats-grid-5">
+  <div class="stat-card accent-border">
+    <div class="stat-num">{{ stats.total }}</div>
+    <div class="stat-label">Total</div>
+    <div class="stat-bar"><div class="stat-fill" style="width:100%"></div></div>
+  </div>
+  <div class="stat-card green-border">
+    <div class="stat-num" style="color:var(--green)">{{ stats.verified }}</div>
+    <div class="stat-label">Verified</div>
+    <div class="stat-bar"><div class="stat-fill fill-green" style="width:{% if stats.total %}{% widthratio stats.verified stats.total 100 %}{% else %}0{% endif %}%"></div></div>
+  </div>
+  <div class="stat-card amber-border">
+    <div class="stat-num" style="color:var(--amber)">{{ stats.pending }}</div>
+    <div class="stat-label">Pending</div>
+    <div class="stat-bar"><div class="stat-fill fill-amber" style="width:{% if stats.total %}{% widthratio stats.pending stats.total 100 %}{% else %}0{% endif %}%"></div></div>
+  </div>
+  <div class="stat-card red-border">
+    <div class="stat-num" style="color:var(--red)">{{ stats.flagged }}</div>
+    <div class="stat-label">Flagged</div>
+    <div class="stat-bar"><div class="stat-fill fill-red" style="width:{% if stats.total %}{% widthratio stats.flagged stats.total 100 %}{% else %}0{% endif %}%"></div></div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-num" style="color:{% if stats.avg_trust >= 80 %}var(--green){% elif stats.avg_trust >= 50 %}var(--amber){% else %}var(--red){% endif %}">{{ stats.avg_trust|floatformat:0 }}</div>
+    <div class="stat-label">Avg Trust</div>
+    <div class="stat-bar"><div class="stat-fill {% if stats.avg_trust >= 80 %}fill-green{% elif stats.avg_trust >= 50 %}fill-amber{% else %}fill-red{% endif %}" style="width:{{ stats.avg_trust|floatformat:0 }}%"></div></div>
+  </div>
+</div>
+
+<div class="two-col">
+  <div>
+    <div class="card">
+      <div class="card-head">
+        <h2 class="card-title">Upload Trend — Last 7 Days</h2>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="trendChart"></canvas>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <h2 class="card-title">Recent Submissions</h2>
+        <a href="{% url 'evidence:list' %}" class="card-link">View all →</a>
+      </div>
+      {% if evidences %}
+      {% for ev in evidences %}
+      <a href="{% url 'evidence:detail' ev.pk %}" style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);color:var(--text);transition:var(--transition);" onmouseover="this.style.paddingLeft='6px'" onmouseout="this.style.paddingLeft='0'">
+        <div style="width:36px;height:36px;border-radius:var(--r-md);background:var(--accent-dim);border:1px solid rgba(0,212,255,.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:16px;">◈</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:500;font-size:13px;">{{ ev.title|truncatechars:32 }}</div>
+          <div style="font-size:11px;color:var(--text-3);font-family:var(--font-mono);margin-top:2px;">{{ ev.sha256_hash|slice:":14" }}… · {{ ev.created_at|date:"M d, Y" }}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;">
+          <span class="status-badge {{ ev.get_status_class }}">{{ ev.status }}</span>
+          <span class="trust-chip {{ ev.get_trust_class }}">{{ ev.trust_score }}</span>
+        </div>
+      </a>
+      {% endfor %}
+      {% else %}
+      <div class="empty-state">
+        <div class="empty-icon">◈</div>
+        <p>No evidence submitted yet.</p>
+        <a href="{% url 'evidence:upload' %}" class="btn btn-sm btn-primary" style="margin-top:12px">Upload your first file</a>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div>
+    {% if stats.open_anomalies > 0 %}
+    <div class="card" style="border-color:rgba(245,158,11,.3);background:rgba(245,158,11,.04);">
+      <div class="card-head">
+        <h2 class="card-title" style="color:var(--amber);">⚠ Open Anomalies</h2>
+        <span style="font-family:var(--font-mono);font-size:12px;color:var(--amber);">{{ stats.open_anomalies }} unresolved</span>
+      </div>
+      <p style="font-size:13px;color:var(--text-2);">Your evidence chain has anomalies detected. Contact your analyst for review.</p>
+    </div>
+    {% endif %}
+
+    <div class="card">
+      <div class="card-head">
+        <h2 class="card-title">Recent Chain Events</h2>
+      </div>
+      <div class="mini-timeline">
+        {% for ev in recent_events %}
+        <div class="mt-event">
+          <div class="mt-dot" style="background:{{ ev.color }};box-shadow:0 0 6px {{ ev.color }}60;"></div>
+          <div class="mt-body">
+            <div class="mt-type" style="color:{{ ev.color }}">{{ ev.event_type }}</div>
+            <div class="mt-desc">{{ ev.evidence.title|truncatechars:28 }}</div>
+            <div class="mt-time">{{ ev.timestamp|date:"M d, Y H:i" }}</div>
+          </div>
+        </div>
+        {% empty %}
+        <div class="empty-state"><p>No events yet.</p></div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h2 class="card-title">Quick Actions</h2></div>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <a href="{% url 'evidence:upload' %}" class="btn btn-outline btn-full">↑ Upload New Evidence</a>
+        <a href="{% url 'evidence:list' %}" class="btn btn-ghost btn-full">◈ Browse My Evidence</a>
+        <a href="{% url 'notifications:list' %}" class="btn btn-ghost btn-full">◈ View Notifications</a>
+        <a href="{% url 'audit:logs' %}" class="btn btn-ghost btn-full">◉ My Activity Log</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const trend = {{ trend_json|safe }};
+document.addEventListener('DOMContentLoaded', () => {
+  initCharts([{
+    id: 'trendChart', type: 'bar',
+    labels: trend.map(d => d.day),
+    datasets: [{
+      label: 'Uploads',
+      data: trend.map(d => d.count),
+      backgroundColor: 'rgba(0,212,255,0.25)',
+      borderColor: '#00d4ff',
+      borderRadius: 4,
+    }]
+  }]);
+});
+</script>
+{% endblock %}

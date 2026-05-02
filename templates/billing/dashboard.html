@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% block title %}Billing{% endblock %}{% block nav_billing %}active{% endblock %}
+{% block breadcrumb %}Billing & Subscription{% endblock %}
+{% block content %}
+<div class="page-header" style="margin-bottom:24px;">
+  <div class="page-header-left"><div class="page-title">Billing & Subscription</div>
+    <div class="page-subtitle">SaaS plans · Usage analytics · API quotas</div></div>
+  {% if request.user.profile.role == 'ADMIN' %}<a href="{% url 'billing:admin' %}" class="btn btn-ghost">Admin View →</a>{% endif %}
+</div>
+<div class="plan-cards" style="margin-bottom:28px;">
+  {% for plan in plans %}
+  <div class="plan-card {% if plan.name == 'PROFESSIONAL' %}featured{% endif %}">
+    <div class="plan-name">{{ plan.name }}</div>
+    <div class="plan-price">${{ plan.price_month }}</div>
+    <div class="plan-period">per month · ${{ plan.price_year }}/yr</div>
+    <ul class="plan-features">{% for feat in plan.features|slice:":5" %}<li>{{ feat }}</li>{% endfor %}</ul>
+    <div style="font-size:10px;color:var(--text-3);margin:8px 0;">{{ plan.max_users }} users · {{ plan.max_evidence_gb }}GB · {{ plan.api_calls_day }} API/day</div>
+    {% if subscription and subscription.plan.name == plan.name %}
+    <div class="plan-cta" style="background:rgba(16,185,129,.12);color:#10b981;border-color:rgba(16,185,129,.3);">✓ Current Plan</div>
+    {% else %}
+    <a href="{% url 'billing:admin' %}" class="plan-cta">Select Plan</a>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% if subscription %}
+<div class="card">
+  <div class="card-header"><div class="card-title">Current Subscription — {{ subscription.plan.name }}</div>
+    <span style="background:rgba(16,185,129,.12);color:#10b981;font-size:11px;padding:2px 8px;border-radius:10px;border:1px solid rgba(16,185,129,.25);">{{ subscription.status }}</span></div>
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:14px;">
+    <div class="stat-card" style="text-align:center;"><div class="stat-value">{{ subscription.days_remaining }}</div><div class="stat-label">Days Remaining</div></div>
+    <div class="stat-card" style="text-align:center;"><div class="stat-value">{{ subscription.api_calls_used }}</div><div class="stat-label">API Calls Used</div></div>
+    <div class="stat-card" style="text-align:center;"><div class="stat-value">{{ subscription.ai_scans_used }}</div><div class="stat-label">AI Scans Used</div></div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

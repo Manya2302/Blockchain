@@ -1,0 +1,192 @@
+{% extends 'base.html' %}
+{% block title %}AI Engine{% endblock %}
+{% block nav_ai %}active{% endblock %}
+{% block breadcrumb %}<a href="{% url 'ai:dashboard' %}">AI Engine</a>{% endblock %}
+
+{% block content %}
+<div class="ai-hero">
+  <div class="ai-hero-icon">🧠</div>
+  <div>
+    <div class="ai-hero-label">Phase 3 · BiLSTM Hybrid Model</div>
+    <div class="ai-hero-title">Temporal Attack AI Engine</div>
+    <div class="ai-hero-sub">Real-time anomaly prediction using sequential event analysis, rule-based fallback, and ensemble scoring</div>
+  </div>
+  <div class="ai-model-status">
+    {% if active_model %}
+    <div class="model-active-pill">{{ active_model.get_model_type_display }} {{ active_model.version_tag }}</div>
+    <div style="font-size:11px;color:var(--text-3);margin-top:6px;font-family:var(--font-mono);">F1: {{ active_model.f1_display }} · Acc: {{ active_model.accuracy_display }}</div>
+    {% else %}
+    <div class="model-active-pill">BiLSTM Hybrid v1.0 (Bootstrap)</div>
+    <div style="font-size:11px;color:var(--text-3);margin-top:6px;font-family:var(--font-mono);">Synthetic-trained · Ready</div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Stats Row -->
+<div class="stats-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:24px;">
+  <div class="stat-card">
+    <div class="stat-value">{{ stats.total }}</div>
+    <div class="stat-label">Total Predictions</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value risk-critical">{{ stats.critical }}</div>
+    <div class="stat-label">High / Critical Risk</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value risk-safe">{{ stats.safe }}</div>
+    <div class="stat-label">Safe Verdicts</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value" style="color:var(--accent);">{{ stats.detection_rate }}%</div>
+    <div class="stat-label">Detection Rate</div>
+  </div>
+</div>
+
+<div class="two-col" style="gap:20px;">
+  <!-- Left: Recent predictions -->
+  <div style="display:flex;flex-direction:column;gap:20px;">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">
+          <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+          Recent AI Predictions
+        </div>
+        <a href="{% url 'ai:compare' %}" class="btn btn-ghost" style="font-size:12px;">Model Comparison →</a>
+      </div>
+      {% if predictions %}
+      <table class="pred-table">
+        <thead><tr>
+          <th>Evidence</th><th>Risk Level</th><th>Anomaly Prob.</th><th>Patterns</th><th></th>
+        </tr></thead>
+        <tbody>
+          {% for p in predictions %}
+          <tr>
+            <td><a href="{% url 'evidence:detail' p.evidence_id %}" style="color:var(--accent);font-size:12px;">{{ p.evidence.title|truncatechars:28 }}</a></td>
+            <td>
+              <span class="risk-badge {{ p.risk_level|lower }}">
+                {{ p.risk_icon }} {{ p.risk_level }}
+              </span>
+            </td>
+            <td>
+              <div class="prob-bar-wrap">
+                <div class="prob-bar">
+                  <div class="prob-bar-fill" style="width:{{ p.anomaly_probability|floatformat:0 }}%;background:{{ p.risk_color }};"></div>
+                </div>
+                <span class="prob-val" style="color:{{ p.risk_color }};">{{ p.anomaly_probability|floatformat:1 }}%</span>
+              </div>
+            </td>
+            <td>
+              <div class="pattern-tags">
+                {% for pat in p.detected_patterns|slice:":2" %}
+                <span class="pattern-tag">{{ pat|cut:"_"|title }}</span>
+                {% empty %}<span style="color:var(--text-3);font-size:11px;">none</span>
+                {% endfor %}
+              </div>
+            </td>
+            <td><a href="{% url 'ai:detail' p.id %}" class="btn btn-ghost" style="font-size:11px;padding:4px 8px;">Detail</a></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div class="empty-state" style="padding:32px;">
+        <div class="empty-icon">🤖</div>
+        <div class="empty-title">No predictions yet</div>
+        <div class="empty-sub">Run AI analysis on evidence items to see predictions here.</div>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Risk Distribution Chart -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Risk Distribution</div>
+      </div>
+      <canvas id="riskChart" height="140"></canvas>
+    </div>
+  </div>
+
+  <!-- Right column -->
+  <div style="display:flex;flex-direction:column;gap:20px;">
+    <!-- Anomaly Probability Trend -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Anomaly Probability Trend</div>
+        <span style="font-size:11px;color:var(--text-3);font-family:var(--font-mono);">Last 14 predictions</span>
+      </div>
+      <canvas id="trendChart" height="120"></canvas>
+    </div>
+
+    <!-- Feature Importance -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Top Feature Importances</div>
+        <span style="font-size:11px;color:var(--text-3);">BiLSTM model weights</span>
+      </div>
+      <div class="feat-list" style="margin-top:8px;">
+        {% for name, val in top_features %}
+        <div class="feat-row">
+          <div class="feat-name" title="{{ name }}">{{ name|cut:"_"|truncatechars:22 }}</div>
+          <div class="feat-bar-wrap"><div class="feat-bar-fill" style="width:{{ val|floatformat:0 }}0%;"></div></div>
+          <div class="feat-val">{{ val|floatformat:3 }}</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Training / Model Actions -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Model Management</div>
+      </div>
+      {% if request.user.profile.role == 'ADMIN' %}
+      <div class="training-action" style="margin-bottom:16px;">
+        <div class="training-action-text">
+          <div class="training-action-title">Retrain BiLSTM Model</div>
+          <div class="training-action-sub">Train on current evidence data to improve accuracy</div>
+        </div>
+        <form method="post" action="{% url 'ai:train' %}">{% csrf_token %}
+          <button type="submit" class="btn-ai-report">⚡ Train Now</button>
+        </form>
+      </div>
+      {% endif %}
+      {% for run in training_runs %}
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);">
+        <span style="font-family:var(--font-mono);font-size:11px;color:{% if run.status == 'COMPLETE' %}#10b981{% elif run.status == 'FAILED' %}#ef4444{% else %}#f59e0b{% endif %};">{{ run.status }}</span>
+        <span style="font-size:12px;color:var(--text-2);">{{ run.started_at|date:"M d, H:i" }}</span>
+        <span style="font-size:11px;color:var(--text-3);margin-left:auto;">{{ run.samples_used }} samples · {{ run.duration_seconds }}s</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<script>
+const riskData = {{ risk_chart_json|safe }};
+const riskLabels = ['SAFE','LOW','MEDIUM','HIGH','CRITICAL'];
+const riskColors = ['#10b981','#84cc16','#f59e0b','#ef4444','#dc2626'];
+const riskCounts = riskLabels.map(l => riskData[l] || 0);
+
+new Chart(document.getElementById('riskChart'), {
+  type:'doughnut',
+  data:{labels:riskLabels, datasets:[{data:riskCounts, backgroundColor:riskColors.map(c=>c+'33'), borderColor:riskColors, borderWidth:2}]},
+  options:{responsive:true, plugins:{legend:{position:'right',labels:{color:'#94a3b8',font:{size:11}}}}}
+});
+
+const trendData = {{ recent_probs_json|safe }};
+new Chart(document.getElementById('trendChart'), {
+  type:'line',
+  data:{
+    labels:trendData.map((_,i)=>`#${i+1}`),
+    datasets:[{label:'Anomaly Probability',data:trendData,borderColor:'#00d4ff',backgroundColor:'rgba(0,212,255,.08)',borderWidth:2,pointRadius:3,tension:.4,fill:true}]
+  },
+  options:{
+    responsive:true,scales:{
+      y:{min:0,max:100,ticks:{color:'#94a3b8',font:{size:10},callback:v=>v+'%'},grid:{color:'rgba(255,255,255,.05)'}},
+      x:{ticks:{color:'#94a3b8',font:{size:10}},grid:{display:false}}
+    },
+    plugins:{legend:{display:false}}
+  }
+});
+</script>
+{% endblock %}

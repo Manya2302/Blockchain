@@ -1,0 +1,271 @@
+{% extends 'base.html' %}{% block title %}{{ ev.title }}{% endblock %}{% block nav_evidence %}active{% endblock %}
+{% block breadcrumb %}Evidence / <strong>{{ ev.title|truncatechars:30 }}</strong>{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">{{ ev.title }}</h1>
+    <p class="page-sub">Evidence #{{ ev.pk }} · v{{ ev.version }} · {{ ev.uploader.username }}</p>
+  </div>
+  <div class="header-actions">
+    <span class="status-badge {{ ev.get_status_class }}" style="font-size:11px;padding:4px 12px;">{{ ev.status }}</span>
+    {% if ev.is_expired %}<span style="padding:4px 12px;font-size:11px;font-weight:700;border-radius:6px;background:rgba(239,68,68,.1);color:#ef4444;border:1px solid rgba(239,68,68,.3);">⊘ EXPIRED</span>{% endif %}
+    {% if is_analyst and not ev.is_expired %}
+    <a href="{% url 'ai:predict' ev.pk %}" class="btn-ai-report" style="font-size:12px;padding:6px 14px;">🧠 AI Analyze</a>
+    <a href="{% url 'graph:dashboard' %}?evidence_id={{ ev.pk }}" class="btn btn-sm" style="background:rgba(139,92,246,.1);color:#a78bfa;border:1px solid rgba(139,92,246,.3);">🕸 Graph</a>
+    <a href="{% url 'blockchain:anchor' ev.pk %}" onclick="return confirm('Anchor this evidence hash to the blockchain simulation?')" class="btn btn-sm" style="background:var(--accent-dim);color:var(--accent);border:1px solid rgba(0,212,255,.3);">⬡ Anchor</a>
+    <a href="{% url 'zkp:create' ev.pk %}" class="btn btn-sm" style="background:rgba(139,92,246,.08);color:#a78bfa;border:1px solid rgba(139,92,246,.2);">🔐 ZKP</a>
+    {% endif %}
+    {% if not ev.is_expired %}
+    <a href="{% url 'reports:evidence_pdf' ev.pk %}" class="btn btn-sm btn-ghost">↓ PDF Report</a>
+    {% endif %}
+    <a href="{% url 'evidence:list' %}" class="btn btn-ghost btn-sm">← Back</a>
+  </div>
+</div>
+
+<!-- Trust Banner -->
+<div class="trust-banner">
+  <div style="flex-shrink:0;text-align:center;">
+    <div class="tb-score {{ ev.get_trust_class }}" style="{% if ev.trust_score >= 80 %}color:var(--green){% elif ev.trust_score >= 50 %}color:var(--amber){% else %}color:var(--red){% endif %}">{{ ev.trust_score }}</div>
+    <div class="tb-label">Trust Score</div>
+  </div>
+  <div class="tb-bar-wrap">
+    <div class="tb-bar"><div class="tb-fill {{ ev.get_trust_class }}" style="width:{{ ev.trust_score }}%"></div></div>
+    <div>
+      {% with anom_count=ev.anomalies.count %}
+      {% if not chain_valid %}<span class="tb-status-bad">⚠ Chain hash mismatch detected — possible tampering</span>
+      {% elif anom_count == 0 %}<span class="tb-status-ok">✓ No anomalies · Chain integrity verified · {{ events|length }} event{{ events|length|pluralize }} in sequence</span>
+      {% else %}<span class="tb-status-warn">⚠ {{ anom_count }} anomal{{ anom_count|pluralize:"y,ies" }} detected — trust reduced by {{ anom_count|add:anom_count }} points</span>{% endif %}{% endwith %}
+    </div>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0;">
+    {% if ev.is_blockchain_anchored %}<span class="chain-badge anchored">⬡ Blockchain Anchored</span>{% else %}<span class="chain-badge">⬡ Not Anchored</span>{% endif %}
+    {% if ev.is_ipfs_pinned %}<span class="ipfs-badge">◈ IPFS Pinned</span>{% endif %}
+    <!-- Expiry Status Badge -->
+    {% if ev.expiry_enabled %}
+    <span style="padding:3px 10px;font-size:10px;font-weight:600;border-radius:4px;color:{{ expiry_status.color }};background:{{ expiry_status.color }}12;border:1px solid {{ expiry_status.color }}30;">
+      {{ expiry_status.icon }} {{ expiry_status.label }}
+    </span>
+    {% endif %}
+  </div>
+  {% if is_analyst %}<a href="{% url 'analysis:rescan' ev.pk %}" class="btn btn-ghost btn-sm">↺ Rescan</a>{% endif %}
+</div>
+
+<!-- Expired Document Banner -->
+{% if ev.is_expired %}
+<div style="margin-bottom:16px;padding:16px;border-radius:var(--r-md);border:1px solid rgba(239,68,68,.3);background:rgba(239,68,68,.06);">
+  <div style="display:flex;align-items:center;gap:12px;">
+    <span style="font-size:24px;">⊘</span>
+    <div>
+      <div style="font-size:14px;font-weight:700;color:#ef4444;">Document Expired — Content Access Revoked</div>
+      <div style="font-size:12px;color:var(--text-2);">
+        Expired at {{ ev.expired_at|date:"M d, Y H:i" }} UTC.
+        File content has been permanently deleted. IPFS pins removed. Blockchain records updated.
+        <strong>Audit trail and timeline are preserved.</strong>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<div class="detail-grid">
+  <!-- Sidebar -->
+  <div class="detail-sidebar">
+    <div class="card">
+      <h2 class="card-title" style="margin-bottom:14px;">File Integrity</h2>
+      <div class="int-row"><span class="int-label">SHA-256</span><code class="int-hash" title="Click to copy">{{ ev.sha256_hash }}</code></div>
+      <div class="int-row"><span class="int-label">Size</span><span class="int-val">{{ ev.file_size_display }}</span></div>
+      <div class="int-row"><span class="int-label">MIME</span><span class="int-val">{{ ev.mime_type|default:"—" }}</span></div>
+      <div class="int-row"><span class="int-label">File</span><span class="int-val" style="font-size:11px;">{{ ev.filename_original|default:"—" }}</span></div>
+      <div class="int-row"><span class="int-label">Version</span><span class="int-val">v{{ ev.version }}</span></div>
+      <div class="int-row"><span class="int-label">IPFS CID</span><span class="int-val" style="{% if ev.ipfs_cid %}color:var(--purple){% endif %}font-family:var(--font-mono);font-size:10px;">{{ ev.ipfs_cid|default:"Blockchain Simulated"|truncatechars:24 }}</span></div>
+      <div class="int-row"><span class="int-label">Blockchain</span><span class="int-val" style="{% if ev.blockchain_tx %}color:var(--green){% endif %}font-family:var(--font-mono);font-size:10px;">{{ ev.blockchain_tx|default:"Not anchored"|truncatechars:20 }}</span></div>
+      {% if ev.is_content_accessible %}
+      <a href="{{ ev.file.url }}" download class="btn btn-ghost btn-full btn-sm" style="margin-top:14px;">↓ Download File</a>
+      {% elif ev.is_expired %}
+      <div style="margin-top:14px;padding:10px;text-align:center;font-size:11px;color:#ef4444;background:rgba(239,68,68,.06);border-radius:var(--r-sm);border:1px solid rgba(239,68,68,.15);">⊘ Content deleted (expired)</div>
+      {% endif %}
+    </div>
+
+    <div class="card">
+      <h2 class="card-title" style="margin-bottom:14px;">Metadata</h2>
+      <div class="int-row"><span class="int-label">Case ID</span><span class="int-val">{{ ev.case_id|default:"—" }}</span></div>
+      <div class="int-row"><span class="int-label">Tags</span><span class="int-val">{{ ev.tags|default:"—" }}</span></div>
+      <div class="int-row"><span class="int-label">Uploaded</span><span class="int-val" style="font-size:11px;">{{ ev.created_at|date:"M d, Y H:i" }}</span></div>
+      <div class="int-row"><span class="int-label">Modified</span><span class="int-val" style="font-size:11px;">{{ ev.updated_at|date:"M d, Y H:i" }}</span></div>
+      <div class="int-row"><span class="int-label">Chain Events</span><span class="int-val" style="color:var(--accent);font-weight:600;">{{ events|length }}</span></div>
+      {% if ev.description %}<div style="font-size:13px;color:var(--text-2);line-height:1.6;padding-top:12px;border-top:1px solid var(--border);margin-top:8px;">{{ ev.description }}</div>{% endif %}
+    </div>
+
+    <!-- Expiry Policy Card -->
+    {% if ev.expiry_enabled %}
+    <div class="card" style="border-color:{{ expiry_status.color }}30;">
+      <h2 class="card-title" style="margin-bottom:14px;">⏰ Self-Destruct Policy</h2>
+      <div class="int-row"><span class="int-label">Status</span><span class="int-val" style="color:{{ expiry_status.color }};font-weight:600;">{{ expiry_status.icon }} {{ expiry_status.label }}</span></div>
+      {% if ev.expires_at %}<div class="int-row"><span class="int-label">Expires At</span><span class="int-val" style="font-size:11px;">{{ ev.expires_at|date:"M d, Y H:i" }}</span></div>{% endif %}
+      {% if ev.expired_at %}<div class="int-row"><span class="int-label">Expired At</span><span class="int-val" style="font-size:11px;color:#ef4444;">{{ ev.expired_at|date:"M d, Y H:i" }}</span></div>{% endif %}
+      <div class="int-row"><span class="int-label">Type</span><span class="int-val">{{ ev.get_expiry_type_display }}</span></div>
+      <div style="font-size:11px;color:var(--text-3);margin-top:8px;">{{ expiry_status.detail }}</div>
+      {% if not ev.is_expired and can_edit %}
+      <a href="{% url 'evidence:set_expiry' ev.pk %}" class="btn btn-ghost btn-full btn-sm" style="margin-top:10px;">⚙ Modify Expiry</a>
+      {% endif %}
+    </div>
+    {% elif can_edit and not ev.is_expired %}
+    <div class="card">
+      <h2 class="card-title" style="margin-bottom:14px;">⏰ Self-Destruct</h2>
+      <div style="font-size:12px;color:var(--text-3);margin-bottom:10px;">No expiry policy set. This document will persist indefinitely.</div>
+      <a href="{% url 'evidence:set_expiry' ev.pk %}" class="btn btn-ghost btn-full btn-sm">⏰ Set Expiry Policy</a>
+    </div>
+    {% endif %}
+
+    {% if versions|length > 1 %}
+    <div class="card">
+      <h2 class="card-title" style="margin-bottom:14px;">Version History</h2>
+      {% for v in versions %}
+      <div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border);font-size:12px;">
+        <span style="font-family:var(--font-mono);color:var(--accent);">v{{ v.version }}</span>
+        <span style="flex:1;color:var(--text-2);">{{ v.created_at|date:"M d, Y" }}</span>
+        {% if v.is_expired %}<span style="font-size:10px;color:#ef4444;">⊘ expired</span>
+        {% elif v.pk == ev.pk %}<span style="font-size:10px;color:var(--green);">● current</span>
+        {% else %}<a href="{% url 'evidence:detail' v.pk %}" style="font-size:11px;color:var(--text-3);">view</a>{% endif %}
+      </div>{% endfor %}
+      <a href="{% url 'evolution:timeline' ev.pk %}" class="btn btn-ghost btn-full btn-sm" style="margin-top:10px;">📊 Evolution Timeline →</a>
+    </div>{% endif %}
+
+    {% if can_edit and not ev.is_expired %}
+    <div class="card">
+      <h2 class="card-title" style="margin-bottom:14px;">Append Chain Event</h2>
+      <form method="post" action="{% url 'evidence:add_event' ev.pk %}">{% csrf_token %}
+        <div class="form-group">
+          <label class="form-label">Event Type</label>
+          <select name="event_type" class="form-input">
+            <option value="MODIFY">MODIFY — Record change</option>
+            <option value="VERIFY">VERIFY — Verify integrity</option>
+            <option value="STORE">STORE — Mark as stored</option>
+            <option value="FLAG">FLAG — Flag issue</option>
+            <option value="NOTE">NOTE — Add annotation</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Description</label>
+          <textarea name="description" class="form-input" rows="2" placeholder="Describe this event…" style="min-height:60px;"></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary btn-full btn-sm">+ Append to Chain</button>
+      </form>
+    </div>{% endif %}
+  </div>
+
+  <!-- Main content: Timeline + Anomalies -->
+  <div>
+    <div class="card">
+      <div class="card-head">
+        <h2 class="card-title">Event Chain Timeline</h2>
+        <div class="chain-validity {% if not chain_valid %}cv-broken{% endif %}">
+          <span class="cv-dot"></span>
+          {% if chain_valid %}Chain Valid · {{ events|length }} event{{ events|length|pluralize }}{% else %}⚠ Hash Mismatch Detected{% endif %}
+        </div>
+      </div>
+      <div class="timeline">
+        {% for event in events %}
+        <div class="tl-event {% if event.is_genesis %}tl-genesis{% endif %}" style="animation-delay:{{ forloop.counter0 }}0ms;">
+          <div class="tl-connector">
+            <div class="tl-dot" style="border-color:{{ event.color }};box-shadow:0 0 8px {{ event.color }}50;"></div>
+            {% if not forloop.last %}<div class="tl-line"></div>{% endif %}
+          </div>
+          <div class="tl-card">
+            <div class="tl-header">
+              <span class="tl-type" style="color:{{ event.color }};">
+                {% if event.event_type == 'UPLOAD' %}↑{% elif event.event_type == 'MODIFY' %}✎{% elif event.event_type == 'VERIFY' %}✓{% elif event.event_type == 'STORE' %}⊞{% elif event.event_type == 'FLAG' %}⚑{% elif event.event_type == 'EXPIRE_SET' %}⏰{% elif event.event_type == 'EXPIRED' %}⊘{% else %}◈{% endif %}
+                {{ event.event_type }}
+              </span>
+              {% if event.is_genesis %}<span class="tl-genesis-badge">GENESIS</span>{% endif %}
+              <span class="tl-seq">#{{ event.sequence_number }}</span>
+              <span class="tl-time">{{ event.timestamp|date:"Y-m-d H:i:s" }} UTC</span>
+            </div>
+            {% if event.description %}<p class="tl-desc">{{ event.description }}</p>{% endif %}
+            <div class="tl-actor">Actor: <strong>{{ event.actor.username|default:"system" }}</strong>{% if event.previous_event %} · Prev: #{{ event.previous_event.sequence_number }}{% endif %}</div>
+            <div class="tl-hash-row">
+              <span class="tl-hash-label">Hash</span>
+              <code class="tl-hash" title="Click to copy">{{ event.event_hash }}</code>
+              {% if event.previous_event %}<span style="font-size:10px;color:var(--text-3);">← <code class="tl-hash-sm">{{ event.previous_event.event_hash|slice:":16" }}…</code></span>{% endif %}
+            </div>
+          </div>
+        </div>{% empty %}
+        <div class="empty-state"><p>No events in chain.</p></div>{% endfor %}
+      </div>
+    </div>
+
+    <!-- Blockchain TXs -->
+    {% if txs %}
+    <div class="card">
+      <div class="card-head"><h2 class="card-title">Blockchain Transactions</h2><span class="chain-badge">⬡ Simulation</span></div>
+      {% for tx in txs %}
+      <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);font-size:12px;">
+        <code style="font-family:var(--font-mono);font-size:10px;color:var(--accent);">{{ tx.tx_hash|slice:":24" }}…</code>
+        <span style="color:var(--text-3);">Block #{{ tx.block_number }}</span>
+        <span class="status-badge status-verified" style="margin-left:auto;">{{ tx.status }}</span>
+        <span style="color:var(--text-3);font-size:11px;">{{ tx.anchored_at|date:"M d H:i" }}</span>
+      </div>{% endfor %}
+    </div>{% endif %}
+
+    <!-- Phase 3: AI Prediction Panel -->
+    {% with latest_pred=ev.ai_predictions.first %}
+    {% if latest_pred %}
+    <div class="card" style="border-color:{{ latest_pred.risk_color }}33;">
+      <div class="card-head">
+        <h2 class="card-title">🧠 AI Analysis</h2>
+        <span class="risk-badge {{ latest_pred.risk_level|lower }}">{{ latest_pred.risk_icon }} {{ latest_pred.risk_level }}</span>
+      </div>
+      <div style="display:flex;gap:16px;margin-top:12px;flex-wrap:wrap;">
+        <div style="flex:1;">
+          <div style="font-size:11px;color:var(--text-3);margin-bottom:4px;">Anomaly Probability</div>
+          <div class="prob-bar-wrap">
+            <div class="prob-bar" style="height:8px;"><div class="prob-bar-fill" style="width:{{ latest_pred.anomaly_probability|floatformat:0 }}%;background:{{ latest_pred.risk_color }};"></div></div>
+            <span class="prob-val" style="color:{{ latest_pred.risk_color }};font-size:14px;font-weight:700;">{{ latest_pred.anomaly_probability|floatformat:1 }}%</span>
+          </div>
+          {% if latest_pred.detected_patterns %}
+          <div class="pattern-tags" style="margin-top:8px;">
+            {% for p in latest_pred.detected_patterns|slice:":3" %}<span class="pattern-tag">{{ p|cut:"_"|title }}</span>{% endfor %}
+          </div>
+          {% endif %}
+        </div>
+        <a href="{% url 'ai:detail' latest_pred.id %}" class="btn btn-ghost btn-sm" style="align-self:flex-start;">Full Report →</a>
+      </div>
+    </div>
+    {% elif is_analyst and not ev.is_expired %}
+    <div class="card" style="text-align:center;padding:20px;">
+      <div style="font-size:13px;color:var(--text-2);margin-bottom:10px;">No AI analysis yet for this evidence.</div>
+      <a href="{% url 'ai:predict' ev.pk %}" class="btn-ai-report">🧠 Run AI Analysis</a>
+    </div>
+    {% endif %}
+    {% endwith %}
+
+    <!-- Anomaly Report -->
+    <div class="card">
+      <div class="card-head">
+        <h2 class="card-title">Anomaly Report</h2>
+        {% if is_analyst %}<a href="{% url 'analysis:rescan' ev.pk %}" class="btn btn-ghost btn-sm">↺ Rescan</a>{% endif %}
+      </div>
+      {% if anomalies %}
+      {% for a in anomalies %}
+      <div class="anomaly-row sev-{{ a.severity|lower }}">
+        <div style="flex-shrink:0;padding-top:2px;"><span class="sev-badge sev-{{ a.severity|lower }}">{{ a.severity }}</span></div>
+        <div class="anom-content">
+          <div class="anom-type-label">{{ a.get_anomaly_type_display }}</div>
+          <div class="anom-desc">{{ a.description }}</div>
+          {% if a.related_event %}<div class="anom-linked">Event #{{ a.related_event.sequence_number }} · {{ a.related_event.event_type }}</div>{% endif %}
+        </div>
+        <div class="anom-meta">
+          <div class="anom-date">{{ a.detected_at|date:"M d H:i" }}</div>
+          {% if a.is_resolved %}<div class="anom-resolved">✓ Resolved</div>
+          {% elif is_analyst %}
+          <form method="post" action="{% url 'analysis:resolve' a.pk %}">{% csrf_token %}
+            <button class="btn btn-xs btn-ghost" style="margin-top:6px;">Resolve</button>
+          </form>{% endif %}
+        </div>
+      </div>{% endfor %}
+      {% else %}
+      <div class="empty-state empty-state-good"><div class="empty-icon-good">✓</div><p>No anomalies detected. Chain integrity verified.</p></div>
+      {% endif %}
+    </div>
+  </div>
+</div>{% endblock %}

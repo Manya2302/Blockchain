@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% block title %}Attacker Profiles{% endblock %}{% block nav_threat %}active{% endblock %}
+{% block breadcrumb %}<a href="{% url 'threat_intel:dashboard' %}">Threat Intel</a> / Attacker Profiles{% endblock %}
+{% block content %}
+<div class="page-header" style="margin-bottom:20px;"><div class="page-title">Attacker Profiles</div>
+<div class="page-subtitle">Recurring threat actors identified by behavioral fingerprinting</div></div>
+<div class="card">
+  {% if profiles %}
+  <table class="pred-table" style="margin-top:8px;">
+    <thead><tr><th>Fingerprint</th><th>Risk Score</th><th>Incidents</th><th>Known IPs</th><th>Patterns</th><th>Last Seen</th></tr></thead>
+    <tbody>{% for p in profiles %}
+    <tr>
+      <td style="font-family:var(--font-mono);font-size:11px;color:var(--accent);">{{ p.fingerprint|truncatechars:20 }}</td>
+      <td><div class="prob-bar-wrap"><div class="prob-bar"><div class="prob-bar-fill" style="width:{{ p.risk_score|floatformat:0 }}0%;background:#ef4444;"></div></div><span class="prob-val">{{ p.risk_score|floatformat:2 }}</span></div></td>
+      <td>{{ p.incident_count }}</td>
+      <td style="font-family:var(--font-mono);font-size:10px;">{{ p.known_ips|length }} IPs</td>
+      <td>{{ p.known_patterns|length }} patterns</td>
+      <td style="font-size:11px;color:var(--text-3);">{{ p.last_seen|date:"M d H:i" }}</td>
+    </tr>{% endfor %}</tbody>
+  </table>
+  {% else %}
+  <div class="empty-state" style="padding:40px;"><div class="empty-icon">🎭</div><div class="empty-title">No attacker profiles yet</div><div class="empty-sub">Profiles are built automatically as attack patterns are detected.</div></div>
+  {% endif %}
+</div>
+{% endblock %}

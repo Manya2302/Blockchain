@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+{% block title %}{{ org.name }}{% endblock %}
+{% block nav_org %}active{% endblock %}
+{% block breadcrumb %}<a href="{% url 'org:list' %}">Organizations</a> / {{ org.name }}{% endblock %}
+{% block content %}
+<div class="org-header" style="background:var(--glass);border:1px solid var(--border);border-radius:var(--r-lg);padding:24px;margin-bottom:20px;">
+  <div class="org-logo" style="width:56px;height:56px;font-size:26px;">{{ org.name.0|upper }}</div>
+  <div style="flex:1;">
+    <div style="font-size:22px;font-weight:800;font-family:var(--font-head);">{{ org.name }}</div>
+    <div style="font-size:13px;color:var(--text-2);">{{ org.get_org_type_display }} · {{ org.city }}{% if org.country %}, {{ org.country }}{% endif %}</div>
+    <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
+      <span class="org-status-pill {{ org.status|lower }}">{{ org.status }}</span>
+      {% if subscription %}<span style="font-size:11px;background:rgba(0,212,255,.1);color:var(--accent);padding:2px 8px;border-radius:10px;border:1px solid rgba(0,212,255,.2);">{{ subscription.plan.name }} Plan</span>{% endif %}
+    </div>
+  </div>
+  <div style="text-align:right;">
+    <a href="{% url 'billing:dashboard' %}" class="btn btn-ghost btn-sm">Billing →</a>
+  </div>
+</div>
+<div class="two-col" style="gap:20px;">
+  <div style="display:flex;flex-direction:column;gap:20px;">
+    <div class="card">
+      <div class="card-header"><div class="card-title">Members ({{ members|length }})</div>
+        <button onclick="document.getElementById('inviteModal').style.display='flex'" class="btn btn-ghost btn-sm">+ Invite</button>
+      </div>
+      {% for m in members %}
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);">
+        <div style="width:32px;height:32px;border-radius:50%;background:var(--accent-dim);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--accent);">{{ m.user.username.0|upper }}</div>
+        <div style="flex:1;"><div style="font-size:13px;font-weight:600;">{{ m.user.get_full_name|default:m.user.username }}</div><div style="font-size:11px;color:var(--text-3);">{{ m.user.email }}</div></div>
+        <span class="role-chip {{ m.role|lower|cut:'_' }}">{{ m.role }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    <div class="card">
+      <div class="card-header"><div class="card-title">API Keys</div>
+        <button onclick="document.getElementById('keyModal').style.display='flex'" class="btn btn-ghost btn-sm">+ Generate</button>
+      </div>
+      {% for key in api_keys %}
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);">
+        <span style="font-family:var(--font-mono);font-size:12px;color:var(--accent);">{{ key.key_prefix }}••••••••</span>
+        <span style="font-size:11px;background:var(--bg-3);padding:1px 7px;border-radius:4px;color:var(--text-2);">{{ key.scope }}</span>
+        <span style="font-size:11px;color:var(--text-3);margin-left:auto;">{{ key.requests_count }} calls</span>
+      </div>
+      {% empty %}<div style="font-size:13px;color:var(--text-3);padding:12px 0;">No API keys yet.</div>
+      {% endfor %}
+      {% if request.session.new_api_key %}
+      <div style="background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.25);border-radius:var(--r-sm);padding:10px;margin-top:10px;">
+        <div style="font-size:11px;color:#10b981;font-weight:600;margin-bottom:4px;">New Key (save this — shown once):</div>
+        <div style="font-family:var(--font-mono);font-size:12px;word-break:break-all;color:var(--text);">{{ request.session.new_api_key }}</div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-header"><div class="card-title">Subscription</div></div>
+    {% if subscription %}
+    <div style="display:flex;flex-direction:column;gap:10px;margin-top:12px;">
+      <div style="text-align:center;padding:16px;"><div style="font-size:28px;font-weight:800;color:var(--accent);">{{ subscription.plan.name }}</div><div style="font-size:13px;color:var(--text-3);">${{ subscription.plan.price_month }}/month</div></div>
+      {% for feat in subscription.plan.features %}<div style="font-size:12px;color:var(--text-2);display:flex;gap:6px;"><span style="color:#10b981;">✓</span>{{ feat }}</div>{% endfor %}
+      {% if is_super_admin %}<a href="{% url 'billing:admin' %}" class="btn btn-ghost btn-sm" style="margin-top:12px;">Manage Plan →</a>{% endif %}
+    </div>
+    {% else %}<div style="font-size:13px;color:var(--text-3);padding:12px 0;">No subscription. <a href="{% url 'billing:dashboard' %}">View plans →</a></div>
+    {% endif %}
+  </div>
+</div>
+<!-- Modals -->
+<div id="inviteModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9000;align-items:center;justify-content:center;">
+  <div class="card" style="width:400px;">
+    <div class="card-header"><div class="card-title">Invite Member</div><button onclick="document.getElementById('inviteModal').style.display='none'" style="background:none;border:none;color:var(--text-3);cursor:pointer;font-size:18px;">×</button></div>
+    <form method="post" action="{% url 'org:invite' org.slug %}" style="margin-top:12px;">{% csrf_token %}
+      <div class="form-group"><label class="form-label">Email</label><input name="email" type="email" class="form-control" required></div>
+      <div class="form-group"><label class="form-label">Role</label>
+        <select name="role" class="form-control">{% for val,label in membership.ROLE_CHOICES %}<option value="{{ val }}">{{ label }}</option>{% endfor %}</select></div>
+      <button type="submit" class="btn btn-primary" style="width:100%;margin-top:8px;">Send Invite</button>
+    </form>
+  </div>
+</div>
+<div id="keyModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9000;align-items:center;justify-content:center;">
+  <div class="card" style="width:400px;">
+    <div class="card-header"><div class="card-title">Generate API Key</div><button onclick="document.getElementById('keyModal').style.display='none'" style="background:none;border:none;color:var(--text-3);cursor:pointer;font-size:18px;">×</button></div>
+    <form method="post" action="{% url 'org:api_key' org.slug %}" style="margin-top:12px;">{% csrf_token %}
+      <div class="form-group"><label class="form-label">Key Name</label><input name="name" class="form-control" placeholder="Production API" required></div>
+      <div class="form-group"><label class="form-label">Scope</label>
+        <select name="scope" class="form-control"><option value="READ">Read Only</option><option value="WRITE">Read + Write</option><option value="IOT">IoT Ingestion</option><option value="MOBILE">Mobile App</option></select></div>
+      <button type="submit" class="btn btn-primary" style="width:100%;margin-top:8px;">Generate Key</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

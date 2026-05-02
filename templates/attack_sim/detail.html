@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+{% block title %}Simulation #{{ sim.id }}{% endblock %}
+{% block nav_attack %}active{% endblock %}
+{% block breadcrumb %}<a href="{% url 'attack_sim:dashboard' %}">Attack Simulator</a> / #{{ sim.id }}{% endblock %}
+
+{% block content %}
+<div class="card" style="margin-bottom:20px;border-color:{% if sim.ai_detected %}rgba(16,185,129,.3){% else %}rgba(239,68,68,.3){% endif %};">
+  <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;">
+    <div style="width:56px;height:56px;border-radius:var(--r-lg);background:{% if sim.ai_detected %}rgba(16,185,129,.1){% else %}rgba(239,68,68,.1){% endif %};border:2px solid {% if sim.ai_detected %}#10b981{% else %}#ef4444{% endif %};display:flex;align-items:center;justify-content:center;font-size:26px;">
+      {% if sim.ai_detected %}🛡{% else %}⚠{% endif %}
+    </div>
+    <div style="flex:1;">
+      <div style="font-size:11px;color:var(--text-3);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.1em;">Simulation #{{ sim.id }} · {{ sim.initiated_at|date:"M d, Y H:i" }}</div>
+      <div style="font-size:20px;font-weight:700;font-family:var(--font-head);">{{ sim.get_attack_type_display }}</div>
+      <div style="font-size:13px;color:var(--text-2);">Target: {{ sim.target_evidence.title }}</div>
+    </div>
+    <div style="text-align:right;">
+      <span class="sim-status-pill {{ sim.status }}" style="font-size:14px;padding:8px 16px;">{{ sim.status }}</span>
+      {% if sim.ai_confidence %}
+      <div style="font-size:11px;color:var(--text-3);margin-top:8px;font-family:var(--font-mono);">AI Confidence: {{ sim.ai_confidence|floatformat:0 }}%</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<div class="two-col" style="gap:20px;">
+  <div style="display:flex;flex-direction:column;gap:20px;">
+    <!-- AI Detection Result -->
+    <div class="card" style="border-color:{% if sim.ai_detected %}rgba(16,185,129,.25){% else %}rgba(239,68,68,.25){% endif %};">
+      <div class="card-header"><div class="card-title">AI Detection Result</div></div>
+      <div style="text-align:center;padding:24px 0;">
+        <div style="font-size:48px;">{% if sim.ai_detected %}✅{% elif sim.ai_detected == False %}❌{% else %}⏳{% endif %}</div>
+        <div style="font-size:20px;font-weight:700;color:{% if sim.ai_detected %}#10b981{% elif sim.ai_detected == False %}#ef4444{% else %}#f59e0b{% endif %};margin-top:8px;">
+          {% if sim.ai_detected %}Attack Detected{% elif sim.ai_detected == False %}Attack Evaded AI{% else %}Pending{% endif %}
+        </div>
+        {% if sim.ai_prediction %}
+        <div style="margin-top:16px;display:flex;justify-content:center;gap:16px;flex-wrap:wrap;">
+          <div style="text-align:center;"><div style="font-size:22px;font-weight:700;color:{{ sim.ai_prediction.risk_color }};">{{ sim.ai_prediction.risk_level }}</div><div style="font-size:11px;color:var(--text-3);">Risk Level</div></div>
+          <div style="text-align:center;"><div style="font-size:22px;font-weight:700;color:{{ sim.ai_prediction.risk_color }};">{{ sim.ai_prediction.anomaly_probability|floatformat:1 }}%</div><div style="font-size:11px;color:var(--text-3);">Anomaly Prob.</div></div>
+        </div>
+        {% if sim.ai_prediction.detected_patterns %}
+        <div class="pattern-tags" style="justify-content:center;margin-top:12px;">
+          {% for p in sim.ai_prediction.detected_patterns %}
+          <span class="pattern-tag">{{ p|cut:"_"|title }}</span>
+          {% endfor %}
+        </div>
+        {% endif %}
+        <a href="{% url 'ai:detail' sim.ai_prediction.id %}" class="btn btn-ghost" style="margin-top:12px;font-size:12px;">View Full Prediction →</a>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Injected Events -->
+    <div class="card">
+      <div class="card-header"><div class="card-title">Injected Events ({{ sim.events_injected }})</div></div>
+      {% if injected_events %}
+      <div class="mini-timeline" style="margin-top:8px;">
+        {% for e in injected_events %}
+        <div class="mt-event">
+          <div class="mt-dot" style="background:#ff6b6b;"></div>
+          <div class="mt-body">
+            <div class="mt-type" style="color:#ff6b6b;">[SIM] {{ e.event_type }}</div>
+            <div class="mt-desc">{{ e.description|truncatechars:60 }}</div>
+            <div class="mt-time">{{ e.timestamp|date:"M d, Y H:i:s" }}</div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div style="padding:16px;color:var(--text-3);font-size:13px;">No injected events recorded.</div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Execution Log -->
+  <div class="card">
+    <div class="card-header"><div class="card-title">Execution Log</div></div>
+    <div class="sim-log" style="margin-top:10px;">{% for line in log_lines %}{{ line }}
+{% endfor %}</div>
+    <div style="margin-top:16px;display:flex;gap:8px;">
+      <a href="{% url 'evidence:detail' sim.target_evidence_id %}" class="btn btn-ghost">View Evidence →</a>
+      <a href="{% url 'attack_sim:dashboard' %}" class="btn btn-ghost">← All Simulations</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

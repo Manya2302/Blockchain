@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+{% block title %}Register Forensic Node{% endblock %}
+{% block nav_gnet %}active{% endblock %}
+{% block breadcrumb %}<a href="{% url 'global_network:dashboard' %}">Global Network</a> / Register Node{% endblock %}
+{% block content %}
+<div style="max-width:640px;margin:0 auto;">
+<div class="card">
+  <div class="card-header"><div class="card-title">🌐 Register Forensic Network Node</div></div>
+  <div style="background:rgba(167,139,250,.06);border:1px solid rgba(167,139,250,.15);border-radius:var(--r-md);padding:12px;margin:14px 0;font-size:12px;color:var(--text-2);">
+    A forensic node joins the global TAP-DEV consortium. A post-quantum DID will be auto-generated using CRYSTALS-Dilithium. The node will be able to send and receive cross-chain evidence via the TAP-IBC bridge protocol.
+  </div>
+  <form method="post" style="margin-top:4px;">{% csrf_token %}
+    <div class="form-group"><label class="form-label">Node Name *</label><input name="name" class="form-control" placeholder="Interpol Digital Forensics Division" required></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div class="form-group"><label class="form-label">Node Type</label>
+        <select name="node_type" class="form-control">{% for val,lbl in node_types %}<option value="{{ val }}">{{ lbl }}</option>{% endfor %}</select></div>
+      <div class="form-group"><label class="form-label">Blockchain</label>
+        <select name="blockchain" class="form-control">{% for val,lbl in chain_choices %}<option value="{{ val }}">{{ lbl }}</option>{% endfor %}</select></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div class="form-group"><label class="form-label">Country Code</label><input name="country_code" class="form-control" placeholder="US" maxlength="3"></div>
+      <div class="form-group"><label class="form-label">Country Name</label><input name="country_name" class="form-control" placeholder="United States"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
+      <div class="form-group"><label class="form-label">City</label><input name="city" class="form-control" placeholder="Washington DC"></div>
+      <div class="form-group"><label class="form-label">Latitude</label><input name="geo_lat" class="form-control" type="number" step="0.0001" placeholder="38.9072"></div>
+      <div class="form-group"><label class="form-label">Longitude</label><input name="geo_lon" class="form-control" type="number" step="0.0001" placeholder="-77.0369"></div>
+    </div>
+    <div class="form-group"><label class="form-label">Node Endpoint (RPC URL)</label><input name="node_address" class="form-control" placeholder="https://forensic-node.agency.gov/rpc"></div>
+    <button type="submit" class="btn btn-primary" style="width:100%;margin-top:8px;">🌐 Register Node to Consortium</button>
+  </form>
+</div>
+</div>
+{% endblock %}

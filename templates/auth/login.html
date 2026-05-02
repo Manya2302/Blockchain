@@ -1,0 +1,56 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Login | T-Vault</title>
+  <link rel="stylesheet" href="{% static 'css/auth.css' %}">
+</head>
+<body class="vault-auth">
+  <a href="{% url 'home:landing' %}" class="auth-home">T-Vault</a>
+  <main class="auth-shell">
+    <section class="auth-panel">
+      <div class="auth-mark"><span></span></div>
+      <span class="auth-eyebrow">Secure session</span>
+      <h1>Access your temporal vault.</h1>
+      <p class="auth-intro">Authenticate into the evidence workspace with anomaly monitoring, blockchain ledger access, and temporal AI protection.</p>
+
+      <form method="post" class="auth-form" data-auth-form novalidate>
+        {% csrf_token %}
+        <label class="auth-field">
+          <span>Username</span>
+          {{ form.username }}
+          <small data-field-hint>Use your vault username.</small>
+          {% if form.username.errors %}<strong>{{ form.username.errors.0 }}</strong>{% endif %}
+        </label>
+        <label class="auth-field">
+          <span>Password</span>
+          {{ form.password }}
+          <button class="field-toggle" type="button" data-toggle-password>Show</button>
+          <small data-field-hint>Minimum 6 characters.</small>
+          {% if form.password.errors %}<strong>{{ form.password.errors.0 }}</strong>{% endif %}
+        </label>
+        {% if form.non_field_errors %}<div class="auth-error">{{ form.non_field_errors.0 }}</div>{% endif %}
+        <button type="submit" class="auth-submit">Authenticate</button>
+      </form>
+
+      <div class="auth-links">
+        <a href="{% url 'users:forgot_password' %}">Forgot password / OTP</a>
+        <a href="{% url 'users:register' %}">Create vault access</a>
+      </div>
+    </section>
+
+    <aside class="auth-visual login-visual" data-auth-visual aria-hidden="true">
+      <div class="scan-card">
+        <span class="scan-line"></span>
+        <div class="scan-node n1"></div><div class="scan-node n2"></div><div class="scan-node n3"></div>
+        <div class="typing-meter"><i></i><i></i><i></i><i></i></div>
+        <h2>Temporal Chain</h2>
+        <p>Identity verified through encrypted session control.</p>
+      </div>
+    </aside>
+  </main>
+  <script src="{% static 'js/auth.js' %}"></script>
+</body>
+</html>

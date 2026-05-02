@@ -1,0 +1,194 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Forensic Graph{% endblock %}
+{% block nav_graph %}active{% endblock %}
+{% block breadcrumb %}Forensic Graph Visualization{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="page-header" style="margin-bottom:20px;">
+  <div class="page-header-left">
+    <div class="page-title">Forensic Evidence Graph</div>
+    <div class="page-subtitle">Interactive visualization of evidence chains, anomaly nodes, blockchain anchors, and AI predictions</div>
+  </div>
+</div>
+
+<div class="two-col" style="gap:16px;align-items:start;">
+  <!-- Evidence selector -->
+  <div style="max-width:280px;">
+    <div class="card" style="padding:0;overflow:hidden;">
+      <div style="padding:14px 16px;border-bottom:1px solid var(--border);font-size:13px;font-weight:600;color:var(--text);">Select Evidence</div>
+      <div style="max-height:480px;overflow-y:auto;">
+        {% for ev in evidence_list %}
+        <a href="?evidence_id={{ ev.id }}" class="{% if selected.id == ev.id %}nav-link active{% else %}nav-link{% endif %}" style="border-radius:0;border-bottom:1px solid var(--border);padding:10px 14px;display:block;">
+          <div style="font-size:12px;font-weight:600;color:var(--text);">{{ ev.title|truncatechars:30 }}</div>
+          <div style="font-size:10px;color:var(--text-3);margin-top:2px;font-family:var(--font-mono);">{{ ev.status }} · Trust: {{ ev.trust_score }}</div>
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Legend -->
+    {% if selected %}
+    <div class="card" style="margin-top:16px;">
+      <div class="card-header"><div class="card-title">Legend</div></div>
+      <div class="graph-legend" style="flex-direction:column;padding:12px 0;">
+        <div class="graph-legend-item"><div class="graph-legend-dot" style="background:#00d4ff;"></div>Evidence Root</div>
+        <div class="graph-legend-item"><div class="graph-legend-dot" style="background:#10b981;"></div>Event (VERIFY)</div>
+        <div class="graph-legend-item"><div class="graph-legend-dot" style="background:#f59e0b;"></div>Event (MODIFY)</div>
+        <div class="graph-legend-item"><div class="graph-legend-dot" style="background:#ef4444;"></div>Anomaly / SIM event</div>
+        <div class="graph-legend-item"><div class="graph-legend-dot" style="background:#8b5cf6;"></div>Blockchain Anchor</div>
+        <div class="graph-legend-item"><div class="graph-legend-dot" style="background:#0891b2;"></div>Version History</div>
+        <div class="graph-legend-item"><div class="graph-legend-dot" style="background:linear-gradient(135deg,#10b981,#ef4444);width:16px;height:10px;border-radius:3px;"></div>AI Prediction</div>
+      </div>
+      <div style="padding:10px 0;font-size:11px;color:var(--text-3);">Drag nodes · Scroll to zoom · Click for details</div>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Graph canvas -->
+  <div style="flex:1;min-width:0;">
+    {% if selected and graph_data %}
+    <div class="graph-canvas-wrap">
+      <div class="graph-controls">
+        <button onclick="resetZoom()" class="btn btn-ghost" style="font-size:12px;">⊡ Reset View</button>
+        <button onclick="toggleForce()" class="btn btn-ghost" style="font-size:12px;" id="forceBtn">⏸ Pause</button>
+        <span style="margin-left:auto;font-size:11px;color:var(--text-3);font-family:var(--font-mono);">Evidence: {{ selected.title|truncatechars:40 }}</span>
+      </div>
+      <svg id="graphSvg"></svg>
+    </div>
+    {% elif selected %}
+    <div class="card" style="text-align:center;padding:60px;">
+      <div style="font-size:40px;">📡</div>
+      <div style="font-size:16px;font-weight:600;color:var(--text);margin-top:12px;">No events found</div>
+      <div style="font-size:13px;color:var(--text-2);">Upload or interact with this evidence first.</div>
+    </div>
+    {% else %}
+    <div class="card" style="text-align:center;padding:80px;">
+      <div style="font-size:48px;">🕸</div>
+      <div style="font-size:18px;font-weight:700;font-family:var(--font-head);color:var(--text);margin-top:16px;">Select Evidence</div>
+      <div style="font-size:13px;color:var(--text-2);margin-top:8px;">Choose an evidence item from the list to visualize its forensic graph</div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Tooltip -->
+<div class="graph-tooltip" id="graphTooltip" style="display:none;"></div>
+
+{% if graph_data %}
+<script>
+const RAW = {{ graph_data|safe }};
+
+const width = document.getElementById('graphSvg').clientWidth || 800;
+const height = 600;
+
+const svg = d3.select('#graphSvg')
+  .attr('viewBox', `0 0 ${width} ${height}`)
+  .attr('preserveAspectRatio', 'xMidYMid meet');
+
+const g = svg.append('g');
+const tooltip = document.getElementById('graphTooltip');
+
+// Zoom
+const zoom = d3.zoom().scaleExtent([0.3, 4]).on('zoom', e => g.attr('transform', e.transform));
+svg.call(zoom);
+
+// Defs: arrowhead
+const defs = svg.append('defs');
+const arrow = defs.append('marker')
+  .attr('id','arrow').attr('viewBox','0 -5 10 10').attr('refX',22).attr('refY',0)
+  .attr('markerWidth',6).attr('markerHeight',6).attr('orient','auto');
+arrow.append('path').attr('d','M0,-5L10,0L0,5').attr('fill','#334155');
+
+// Force simulation
+const simulation = d3.forceSimulation(RAW.nodes)
+  .force('link', d3.forceLink(RAW.links).id(d=>d.id).distance(d => d.type === 'chain' ? 90 : 140))
+  .force('charge', d3.forceManyBody().strength(-280))
+  .force('center', d3.forceCenter(width/2, height/2))
+  .force('collision', d3.forceCollide().radius(d => d.size + 10));
+
+// Links
+const link = g.append('g').selectAll('line')
+  .data(RAW.links).join('line')
+  .attr('stroke', d => d.color || '#334155')
+  .attr('stroke-width', d => d.type === 'chain' ? 1.5 : 1)
+  .attr('stroke-dasharray', d => d.type !== 'chain' ? '4,3' : null)
+  .attr('marker-end', 'url(#arrow)')
+  .attr('opacity', 0.7);
+
+// Link labels
+const linkLabel = g.append('g').selectAll('text')
+  .data(RAW.links.filter(d=>d.type!=='chain')).join('text')
+  .attr('font-size', 9).attr('fill', '#64748b').attr('text-anchor','middle');
+
+// Node groups
+const node = g.append('g').selectAll('g')
+  .data(RAW.nodes).join('g')
+  .call(d3.drag()
+    .on('start', (e,d) => { if(!e.active) simulation.alphaTarget(.3).restart(); d.fx=d.x; d.fy=d.y; })
+    .on('drag',  (e,d) => { d.fx=e.x; d.fy=e.y; })
+    .on('end',   (e,d) => { if(!e.active) simulation.alphaTarget(0); d.fx=null; d.fy=null; })
+  );
+
+// Node circles
+node.append('circle')
+  .attr('r', d => d.size)
+  .attr('fill', d => d.color + '22')
+  .attr('stroke', d => d.color)
+  .attr('stroke-width', d => d.type === 'evidence' ? 2.5 : 1.5);
+
+// Node icons
+const iconMap = {evidence:'⬡', event:'●', anomaly:'▲', blockchain:'⛓', ai:'🧠', version:'◈'};
+node.append('text')
+  .text(d => iconMap[d.type] || '●')
+  .attr('text-anchor','middle').attr('dominant-baseline','central')
+  .attr('font-size', d => d.size * 0.9)
+  .attr('fill', d => d.color);
+
+// Node labels
+node.append('text')
+  .text(d => d.label)
+  .attr('text-anchor','middle')
+  .attr('dy', d => d.size + 14)
+  .attr('font-size', 10)
+  .attr('fill', '#94a3b8')
+  .attr('font-family', 'Inter, sans-serif');
+
+// Tooltip
+node.on('mouseover', (e, d) => {
+  const meta = d.metadata || {};
+  let html = `<strong style="color:${d.color}">${d.label}</strong><br><em style="color:#64748b">${d.type}</em>`;
+  Object.entries(meta).forEach(([k,v]) => {
+    if(Array.isArray(v)) v = v.join(', ');
+    html += `<br><span style="color:#64748b">${k}:</span> ${v}`;
+  });
+  tooltip.innerHTML = html;
+  tooltip.style.display = 'block';
+  tooltip.style.left = (e.pageX + 12) + 'px';
+  tooltip.style.top  = (e.pageY - 10) + 'px';
+}).on('mousemove', e => {
+  tooltip.style.left = (e.pageX + 12) + 'px';
+  tooltip.style.top  = (e.pageY - 10) + 'px';
+}).on('mouseout', () => { tooltip.style.display = 'none'; });
+
+// Tick
+simulation.on('tick', () => {
+  link.attr('x1',d=>d.source.x).attr('y1',d=>d.source.y).attr('x2',d=>d.target.x).attr('y2',d=>d.target.y);
+  linkLabel.attr('x',d=>(d.source.x+d.target.x)/2).attr('y',d=>(d.source.y+d.target.y)/2).text(d=>d.label);
+  node.attr('transform', d => `translate(${d.x},${d.y})`);
+});
+
+let paused = false;
+function resetZoom() { svg.transition().call(zoom.transform, d3.zoomIdentity); }
+function toggleForce() {
+  paused = !paused;
+  document.getElementById('forceBtn').textContent = paused ? '▶ Resume' : '⏸ Pause';
+  paused ? simulation.stop() : simulation.restart();
+}
+</script>
+{% endif %}
+{% endblock %}

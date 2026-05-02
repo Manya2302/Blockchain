@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% block title %}ZKP Proofs{% endblock %}{% block nav_zkp %}active{% endblock %}
+{% block breadcrumb %}Zero-Knowledge Proof Engine{% endblock %}
+{% block content %}
+<div class="page-header" style="margin-bottom:20px;">
+  <div class="page-header-left"><div class="page-title">Zero-Knowledge Proof Engine</div>
+    <div class="page-subtitle">Prove document authenticity without revealing content · Privacy-preserving verification</div></div>
+  <div style="display:flex;gap:8px;">
+    <a href="{% url 'zkp:resume_dashboard' %}" class="btn btn-sm" style="background:rgba(139,92,246,.1);color:#a78bfa;border:1px solid rgba(139,92,246,.3);">📋 Resume Verify</a>
+    {% if user.profile.role == 'ADMIN' %}
+    <a href="{% url 'zkp:manage_issuers' %}" class="btn btn-sm btn-ghost">🏛 Issuers</a>
+    <a href="{% url 'zkp:verification_logs' %}" class="btn btn-sm btn-ghost">📜 Logs</a>
+    {% endif %}
+  </div>
+</div>
+<div class="stats-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:20px;">
+  <div class="stat-card"><div class="stat-value">{{ stats.total }}</div><div class="stat-label">Total Proofs</div></div>
+  <div class="stat-card"><div class="stat-value risk-safe">{{ stats.valid }}</div><div class="stat-label">Valid</div></div>
+  <div class="stat-card"><div class="stat-value" style="color:#f59e0b;">{{ stats.pending }}</div><div class="stat-label">Pending</div></div>
+  <div class="stat-card"><div class="stat-value risk-critical">{{ stats.invalid }}</div><div class="stat-label">Invalid</div></div>
+</div>
+
+<!-- Resume Credentials Summary -->
+{% if cred_stats.total > 0 %}
+<div class="card" style="margin-bottom:20px;border-color:rgba(139,92,246,.2);">
+  <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+    <div style="font-size:28px;">📋</div>
+    <div style="flex:1;">
+      <div style="font-size:14px;font-weight:600;color:var(--text);">Resume Verification</div>
+      <div style="font-size:12px;color:var(--text-2);">{{ cred_stats.verified }} verified · {{ cred_stats.pending }} pending · {{ issuer_count }} trusted issuers</div>
+    </div>
+    <a href="{% url 'zkp:resume_dashboard' %}" class="btn btn-sm" style="background:rgba(139,92,246,.1);color:#a78bfa;border:1px solid rgba(139,92,246,.3);">View Credentials →</a>
+  </div>
+</div>
+{% endif %}
+
+<div class="card">
+  <div class="card-header"><div class="card-title">ZKP Verification Proofs</div>
+    <div style="font-size:11px;color:var(--text-3);">Groth16 · SHA-256 Circuit · Pedersen Commitment</div></div>
+  {% if proofs %}
+  <div style="display:flex;flex-direction:column;gap:8px;margin-top:12px;">
+    {% for proof in proofs %}
+    <div class="zkp-proof-card" style="border-radius:var(--r-md);padding:14px;">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:13px;font-weight:600;color:var(--text);">{{ proof.evidence.title|truncatechars:40 }}</div>
+          <div style="font-size:11px;color:var(--text-3);font-family:var(--font-mono);margin-top:2px;">{{ proof.proof_id|truncatechars:24 }}...</div>
+          <div style="font-size:11px;color:var(--text-3);margin-top:2px;">{{ proof.get_use_case_display }} · {{ proof.created_at|date:"M d, Y" }}</div>
+        </div>
+        <span class="zkp-status-badge {{ proof.status }}">{% if proof.status == "VALID" %}✓{% elif proof.status == "INVALID" %}✕{% else %}⏳{% endif %} {{ proof.status }}</span>
+        <a href="{% url 'zkp:detail' proof.proof_id %}" class="btn btn-ghost" style="font-size:11px;padding:4px 10px;">View →</a>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state" style="padding:48px;"><div class="empty-icon">🔐</div>
+    <div class="empty-title">No ZKP proofs yet</div>
+    <div class="empty-sub">Generate proofs from the evidence detail page to verify documents without exposing content.</div>
+    <a href="{% url 'evidence:list' %}" class="btn btn-primary" style="margin-top:16px;">Go to Evidence →</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

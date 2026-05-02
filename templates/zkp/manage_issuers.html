@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+{% block title %}Manage Issuers{% endblock %}{% block nav_zkp %}active{% endblock %}
+{% block breadcrumb %}<a href="{% url 'zkp:dashboard' %}">ZKP</a> / Trusted Issuers{% endblock %}
+{% block content %}
+<div class="page-header" style="margin-bottom:20px;">
+  <div class="page-header-left">
+    <div class="page-title">🏛 Trusted Issuers & Pending Credentials</div>
+    <div class="page-subtitle">Manage trusted credential issuers and review pending verification requests</div>
+  </div>
+</div>
+
+<div class="two-col" style="gap:20px;">
+  <!-- Add Issuer -->
+  <div style="display:flex;flex-direction:column;gap:16px;">
+    <div class="card">
+      <div class="card-header"><div class="card-title">Add Trusted Issuer</div></div>
+      <form method="post" style="margin-top:12px;">{% csrf_token %}
+        <div class="form-group"><label class="form-label">Name <span class="required">*</span></label><input type="text" name="name" class="form-input" placeholder="e.g., Massachusetts Institute of Technology" required></div>
+        <div class="form-row-2">
+          <div class="form-group"><label class="form-label">Type</label><select name="issuer_type" class="form-input">{% for val,label in issuer_types %}<option value="{{ val }}">{{ label }}</option>{% endfor %}</select></div>
+          <div class="form-group"><label class="form-label">Trust Level</label><select name="trust_level" class="form-input">{% for val,label in trust_levels %}<option value="{{ val }}">{{ label }}</option>{% endfor %}</select></div>
+        </div>
+        <div class="form-row-2">
+          <div class="form-group"><label class="form-label">Website</label><input type="url" name="website" class="form-input" placeholder="https://..."></div>
+          <div class="form-group"><label class="form-label">Country</label><input type="text" name="country" class="form-input" placeholder="e.g., United States"></div>
+        </div>
+        <button type="submit" class="btn btn-primary btn-full btn-sm">+ Add Issuer</button>
+      </form>
+    </div>
+
+    <!-- Existing Issuers -->
+    <div class="card">
+      <div class="card-header"><div class="card-title">Registered Issuers</div><span style="font-size:11px;color:var(--text-3);">{{ issuers|length }} total</span></div>
+      {% if issuers %}
+      <div style="display:flex;flex-direction:column;gap:6px;margin-top:10px;">
+        {% for issuer in issuers %}
+        <div style="display:flex;align-items:center;gap:10px;padding:10px;border-radius:var(--r-sm);border:1px solid var(--border);background:var(--bg-2);">
+          <div style="width:32px;height:32px;border-radius:var(--r-sm);background:{{ issuer.trust_color }}12;display:flex;align-items:center;justify-content:center;font-size:14px;">🏛</div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:13px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ issuer.name }}</div>
+            <div style="font-size:10px;color:var(--text-3);">{{ issuer.get_issuer_type_display }}{% if issuer.country %} · {{ issuer.country }}{% endif %}</div>
+          </div>
+          <span style="padding:2px 8px;font-size:10px;font-weight:600;border-radius:4px;color:{{ issuer.trust_color }};background:{{ issuer.trust_color }}12;">{{ issuer.trust_level }}</span>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div style="padding:20px;text-align:center;color:var(--text-3);font-size:12px;">No issuers registered yet.</div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Pending Credentials -->
+  <div class="card">
+    <div class="card-header"><div class="card-title">Pending Credential Reviews</div><span style="font-size:11px;color:var(--text-3);">{{ pending_creds|length }} awaiting</span></div>
+    {% if pending_creds %}
+    <div style="display:flex;flex-direction:column;gap:8px;margin-top:10px;">
+      {% for cred in pending_creds %}
+      <div style="padding:12px;border-radius:var(--r-md);border:1px solid rgba(245,158,11,.2);background:rgba(245,158,11,.03);">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="flex:1;">
+            <div style="font-size:13px;font-weight:600;color:var(--text);">{{ cred.claim_title }}</div>
+            <div style="font-size:11px;color:var(--text-3);">{{ cred.get_claim_type_display }} · {{ cred.owner.username }} · {{ cred.issuer_name|default:"No issuer" }}</div>
+          </div>
+          <a href="{% url 'zkp:verify_credential' cred.pk %}" class="btn btn-sm" style="background:rgba(245,158,11,.1);color:#f59e0b;border:1px solid rgba(245,158,11,.3);">Review →</a>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state" style="padding:32px;">
+      <div class="empty-icon">✓</div>
+      <div class="empty-title" style="color:#10b981;">All caught up</div>
+      <div class="empty-sub">No credentials pending review.</div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

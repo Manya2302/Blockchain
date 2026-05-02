@@ -1,0 +1,19 @@
+{% extends 'base.html' %}{% block title %}Edit Profile{% endblock %}
+{% block breadcrumb %}Profile / <strong>Edit</strong>{% endblock %}
+{% block content %}
+<div class="page-header"><div><h1 class="page-title">Edit Profile</h1></div><a href="{% url 'profile:view' %}" class="btn btn-ghost">← Back</a></div>
+<div class="card card-narrow">
+  <form method="post" enctype="multipart/form-data" novalidate>{% csrf_token %}
+    <div class="form-row-2"><div class="form-group"><label class="form-label">First Name</label>{{ form.first_name }}</div><div class="form-group"><label class="form-label">Last Name</label>{{ form.last_name }}</div></div>
+    <div class="form-group"><label class="form-label">Email</label>{{ form.email }}</div>
+    <div class="form-row-2"><div class="form-group"><label class="form-label">Organization</label>{{ form.organization }}</div><div class="form-group"><label class="form-label">Department</label>{{ form.department }}</div></div>
+    <div class="form-group"><label class="form-label">Phone</label>{{ form.phone }}</div>
+    <div class="form-group"><label class="form-label">Bio</label>{{ form.bio }}</div>
+    <div class="form-group"><label class="form-label">Profile Image</label>{{ form.profile_image }}</div>
+    <div class="form-row-2">
+      <div class="form-group"><label class="form-label">Theme</label>{{ form.theme }}</div>
+      <div class="form-group form-check" style="padding-top:28px">{{ form.email_notifs }}<label class="form-label" style="text-transform:none;font-size:13px;margin-bottom:0">Email Notifications</label></div>
+    </div>
+    <div class="form-actions"><button type="submit" class="btn btn-primary">Save Changes</button><a href="{% url 'profile:view' %}" class="btn btn-ghost">Cancel</a></div>
+  </form>
+</div>{% endblock %}

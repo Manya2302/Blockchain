@@ -1,0 +1,118 @@
+{% extends 'base.html' %}
+{% block title %}Analyst Dashboard{% endblock %}
+{% block nav_dash %}active{% endblock %}
+{% block breadcrumb %}<strong>Analyst Dashboard</strong>{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Analyst Dashboard</h1>
+    <p class="page-sub">Evidence review · Anomaly triage · Trust scoring</p>
+  </div>
+  <span class="role-badge role-analyst">ANALYST</span>
+</div>
+
+<div class="stats-grid stats-grid-5">
+  <div class="stat-card accent-border"><div class="stat-num">{{ stats.total }}</div><div class="stat-label">Total Evidence</div></div>
+  <div class="stat-card green-border"><div class="stat-num" style="color:var(--green)">{{ stats.verified }}</div><div class="stat-label">Verified</div></div>
+  <div class="stat-card red-border"><div class="stat-num" style="color:var(--red)">{{ stats.flagged }}</div><div class="stat-label">Flagged</div></div>
+  <div class="stat-card amber-border"><div class="stat-num" style="color:var(--amber)">{{ stats.anomalies }}</div><div class="stat-label">Open Anomalies</div></div>
+  <div class="stat-card"><div class="stat-num" style="color:var(--red)">{{ stats.high_risk }}</div><div class="stat-label">High Risk (&lt;50)</div></div>
+</div>
+
+<div class="three-col" style="margin-bottom:20px;">
+  <div class="card" style="margin-bottom:0">
+    <div class="card-head"><h2 class="card-title">Anomaly Severity</h2></div>
+    <div class="chart-wrap"><canvas id="sevChart"></canvas></div>
+  </div>
+  <div class="card" style="margin-bottom:0">
+    <div class="card-head"><h2 class="card-title">Trust Distribution</h2></div>
+    <div class="chart-wrap"><canvas id="trustChart"></canvas></div>
+  </div>
+  <div class="card" style="margin-bottom:0">
+    <div class="card-head"><h2 class="card-title">Events — 14 Days</h2></div>
+    <div class="chart-wrap"><canvas id="evtChart"></canvas></div>
+  </div>
+</div>
+
+<div class="two-col">
+  <div class="card">
+    <div class="card-head">
+      <h2 class="card-title">Evidence Review Queue</h2>
+      <a href="{% url 'evidence:list' %}" class="card-link">Full list →</a>
+    </div>
+    <table class="data-table">
+      <thead><tr><th>Title</th><th>Submitter</th><th>Status</th><th>Trust</th><th></th></tr></thead>
+      <tbody>
+        {% for ev in evidences %}
+        <tr class="{% if ev.trust_score < 50 %}row-risk{% endif %}">
+          <td>
+            <div style="font-weight:500;font-size:13px;">{{ ev.title|truncatechars:26 }}</div>
+            <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-3);">{{ ev.sha256_hash|slice:":12" }}…</div>
+          </td>
+          <td style="color:var(--text-2);font-size:13px;">{{ ev.uploader.username }}</td>
+          <td><span class="status-badge {{ ev.get_status_class }}">{{ ev.status }}</span></td>
+          <td>
+            <div class="inline-trust">
+              <div class="mini-bar"><div class="mini-fill {{ ev.get_trust_class }}" style="width:{{ ev.trust_score }}%"></div></div>
+              <span class="{{ ev.get_trust_class }}" style="font-weight:600;font-size:13px;">{{ ev.trust_score }}</span>
+            </div>
+          </td>
+          <td><a href="{% url 'evidence:detail' ev.pk %}" class="table-link">Review →</a></td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" class="empty-row">No evidence in system.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <h2 class="card-title">Open Anomalies</h2>
+      <a href="{% url 'analysis:anomaly_list' %}" class="card-link">All →</a>
+    </div>
+    {% for anomaly in anomalies %}
+    <div style="display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);">
+      <span class="sev-badge sev-{{ anomaly.severity|lower }}">{{ anomaly.severity }}</span>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:13px;font-weight:500;">{{ anomaly.get_anomaly_type_display }}</div>
+        <div style="font-size:12px;color:var(--text-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ anomaly.evidence.title }}</div>
+        <div style="font-size:11px;color:var(--text-3);font-family:var(--font-mono);">{{ anomaly.detected_at|date:"M d H:i" }}</div>
+      </div>
+      <a href="{% url 'evidence:detail' anomaly.evidence.pk %}" style="font-size:11px;color:var(--text-3);flex-shrink:0;">→</a>
+    </div>
+    {% empty %}
+    <div class="empty-state empty-state-good"><div class="empty-icon-good">✓</div><p>No open anomalies.</p></div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const sev  = {{ sev_json|safe }};
+const trust= {{ trust_json|safe }};
+const evts = {{ event_trend_json|safe }};
+document.addEventListener('DOMContentLoaded', () => {
+  const sevMap = {HIGH:'#ef4444',MEDIUM:'#f59e0b',LOW:'#4d6882'};
+  initCharts([
+    {
+      id:'sevChart', type:'doughnut',
+      labels: sev.map(d=>d.severity),
+      datasets:[{data:sev.map(d=>d.c), backgroundColor:sev.map(d=>sevMap[d.severity]||'#4d6882'), borderWidth:0}],
+      options:{plugins:{legend:{display:true,position:'bottom'}}}
+    },
+    {
+      id:'trustChart', type:'bar',
+      labels: trust.map(d=>d.label),
+      datasets:[{label:'Count',data:trust.map(d=>d.count),backgroundColor:['#10b981','#10b981','#f59e0b','#ef4444'],borderRadius:4}]
+    },
+    {
+      id:'evtChart', type:'line',
+      labels: evts.map(d=>d.day),
+      datasets:[{label:'Events',data:evts.map(d=>d.count),borderColor:'#00d4ff',backgroundColor:'rgba(0,212,255,0.08)',fill:true,tension:.4,pointRadius:2}]
+    }
+  ]);
+});
+</script>
+{% endblock %}

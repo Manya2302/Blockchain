@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% block title %}Digital Twins{% endblock %}
+{% block nav_dtwin %}active{% endblock %}
+{% block breadcrumb %}Digital Twin Simulation{% endblock %}
+{% block content %}
+<div class="p5-hero">
+  <div class="p5-hero-label">Phase 5 · Attack Simulation · Kill Chain Analysis</div>
+  <div class="p5-hero-title">🖥 Digital Twin Attack Simulation</div>
+  <div class="p5-hero-sub">Virtual replicas of real infrastructure — test TAP-DEV AI detection against real attack scenarios</div>
+</div>
+<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px;">
+  <div class="p5-stat"><div class="p5-stat-val">{{ stats.total_twins }}</div><div class="p5-stat-label">Digital Twins</div></div>
+  <div class="p5-stat"><div class="p5-stat-val">{{ stats.simulations }}</div><div class="p5-stat-label">Simulations Run</div></div>
+  <div class="p5-stat"><div class="p5-stat-val" style="color:#10b981;">{{ stats.detected }}</div><div class="p5-stat-label">Attacks Detected</div></div>
+  <div class="p5-stat"><div class="p5-stat-val" style="color:#ef4444;">{{ stats.evaded }}</div><div class="p5-stat-label">Evaded AI</div></div>
+  <div class="p5-stat"><div class="p5-stat-val" style="color:#a78bfa;">{{ stats.detection_rate }}%</div><div class="p5-stat-label">Detection Rate</div></div>
+</div>
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;margin-bottom:24px;">
+  {% for twin in twins %}
+  <div class="twin-card">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+      <div class="twin-type-icon">{% if twin.twin_type == 'NETWORK' %}🌐{% elif twin.twin_type == 'HOSPITAL' %}🏥{% elif twin.twin_type == 'SMART_CITY' %}🏙{% elif twin.twin_type == 'INDUSTRIAL' %}🏭{% elif twin.twin_type == 'AIRPORT' %}✈{% elif twin.twin_type == 'MILITARY' %}🛡{% else %}💻{% endif %}</div>
+      <div><div style="font-size:14px;font-weight:700;">{{ twin.name }}</div>
+        <div style="font-size:10px;color:var(--text-3);">{{ twin.get_twin_type_display }}</div></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
+      <div class="stat-card" style="padding:8px;text-align:center;"><div style="font-size:16px;font-weight:700;color:var(--accent);">{{ twin.topology.nodes|default:0 }}</div><div style="font-size:10px;color:var(--text-3);">Nodes</div></div>
+      <div class="stat-card" style="padding:8px;text-align:center;"><div style="font-size:16px;font-weight:700;color:var(--accent);">{{ twin.total_simulations }}</div><div style="font-size:10px;color:var(--text-3);">Simulations</div></div>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <a href="{% url 'digital_twin:run_sim' twin.id %}" class="btn btn-primary btn-sm" style="flex:1;text-align:center;background:linear-gradient(135deg,#7c3aed,#db2777);">⚡ Run Attack</a>
+    </div>
+  </div>
+  {% empty %}
+  <div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text-3);">No digital twins yet. <a href="{% url 'digital_twin:create' %}">Create one →</a></div>
+  {% endfor %}
+  <div class="twin-card" style="border-style:dashed;display:flex;align-items:center;justify-content:center;min-height:160px;">
+    <a href="{% url 'digital_twin:create' %}" style="text-decoration:none;text-align:center;">
+      <div style="font-size:28px;">+</div>
+      <div style="font-size:13px;color:var(--text-2);margin-top:4px;">Create Twin</div>
+    </a>
+  </div>
+</div>
+<div class="card">
+  <div class="card-header"><div class="card-title">Recent Simulation Results</div></div>
+  <table class="pred-table" style="margin-top:8px;">
+    <thead><tr><th>Twin</th><th>Attack Scenario</th><th>Result</th><th>Detection Time</th><th>AI Score</th><th>Date</th><th></th></tr></thead>
+    <tbody>{% for sim in sims %}
+    <tr>
+      <td style="font-weight:600;font-size:12px;">{{ sim.twin.name|truncatechars:20 }}</td>
+      <td><span class="inv-type-badge" style="font-size:10px;">{{ sim.get_attack_scenario_display }}</span></td>
+      <td>{% if sim.was_detected is not None %}<span class="detection-badge {% if sim.was_detected %}detected{% else %}evaded{% endif %}">{% if sim.was_detected %}✓ Detected{% else %}✗ Evaded{% endif %}</span>{% else %}<span style="color:var(--text-3);">Pending</span>{% endif %}</td>
+      <td style="font-family:var(--font-mono);font-size:11px;">{% if sim.detection_time %}{{ sim.detection_time }}s{% else %}—{% endif %}</td>
+      <td><div class="prob-bar-wrap"><div class="prob-bar"><div class="prob-bar-fill" style="width:{{ sim.ai_response_score|floatformat:0 }}00%;background:#a78bfa;"></div></div><span class="prob-val" style="color:#a78bfa;">{{ sim.ai_response_score|floatformat:0 }}%</span></div></td>
+      <td style="font-size:11px;color:var(--text-3);">{{ sim.started_at|date:"M d H:i" }}</td>
+      <td><a href="{% url 'digital_twin:sim_detail' sim.id %}" class="btn btn-ghost" style="font-size:11px;padding:3px 8px;">Detail</a></td>
+    </tr>{% endfor %}</tbody>
+  </table>
+</div>
+{% endblock %}

@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% block title %}Submit Proposal{% endblock %}
+{% block nav_dao %}active{% endblock %}
+{% block breadcrumb %}<a href="{% url 'dao_governance:dashboard' %}">DAO</a> / Submit Proposal{% endblock %}
+{% block content %}
+<div style="max-width:640px;margin:0 auto;">
+<div class="card">
+  <div class="card-header"><div class="card-title">🏛 Submit Governance Proposal</div></div>
+  <div style="background:rgba(139,92,246,.06);border:1px solid rgba(139,92,246,.15);border-radius:var(--r-md);padding:12px;margin:14px 0;font-size:12px;color:var(--text-2);">
+    Proposals require a 67% supermajority to pass. Voting is open for 7 days. All votes are recorded on-chain with your wallet attestation.
+  </div>
+  <form method="post">{% csrf_token %}
+    <div class="form-group"><label class="form-label">Proposal Type</label>
+      <select name="proposal_type" class="form-control">{% for val,lbl in proposal_types %}<option value="{{ val }}">{{ lbl }}</option>{% endfor %}</select></div>
+    <div class="form-group"><label class="form-label">Title *</label>
+      <input name="title" class="form-control" placeholder="Clear, concise proposal title..." required></div>
+    <div class="form-group"><label class="form-label">Description *</label>
+      <textarea name="description" class="form-control" rows="4" placeholder="Describe the proposal, rationale, and expected impact..." required></textarea></div>
+    <div class="form-group"><label class="form-label">Technical Specification (optional)</label>
+      <textarea name="technical_spec" class="form-control" rows="3" placeholder="Protocol parameters, contract addresses, implementation details..."></textarea></div>
+    <button type="submit" class="btn btn-primary" style="width:100%;margin-top:12px;background:linear-gradient(135deg,#7c3aed,#4f46e5);">🏛 Submit Proposal & Open Voting</button>
+  </form>
+</div>
+</div>
+{% endblock %}

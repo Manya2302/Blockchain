@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+{% block title %}AI Evolution Analysis{% endblock %}
+{% block nav_evolution %}active{% endblock %}
+{% block breadcrumb %}<a href="{% url 'evolution:dashboard' %}">Evolution Tracker</a> / AI Analysis{% endblock %}
+
+{% block content %}
+<div class="page-header" style="margin-bottom:20px;">
+  <div class="page-header-left">
+    <div class="page-title">🧠 AI Evolution Analysis Report</div>
+    <div class="page-subtitle">{{ analysis.evidence.title }} · Analyzed {{ analysis.analyzed_at|date:"M d, Y H:i" }}</div>
+  </div>
+  <a href="{% url 'evolution:timeline' analysis.evidence.id %}" class="btn btn-ghost">← Timeline</a>
+</div>
+
+<!-- Risk Score Hero -->
+<div class="card" style="margin-bottom:20px;border-color:{{ analysis.risk_color }}33;">
+  <div style="display:flex;align-items:center;gap:24px;flex-wrap:wrap;">
+    <div style="text-align:center;flex-shrink:0;">
+      <div style="width:100px;height:100px;border-radius:50%;border:4px solid {{ analysis.risk_color }};display:flex;align-items:center;justify-content:center;flex-direction:column;">
+        <div style="font-size:28px;font-weight:800;color:{{ analysis.risk_color }};font-family:var(--font-mono);">{{ analysis.anomaly_percent }}%</div>
+        <div style="font-size:10px;color:var(--text-3);">ANOMALY</div>
+      </div>
+      <div style="font-size:14px;font-weight:700;color:{{ analysis.risk_color }};margin-top:8px;">{{ analysis.risk_icon }} {{ analysis.risk_level }}</div>
+    </div>
+    <div style="flex:1;">
+      <div style="font-size:14px;color:var(--text);font-weight:600;margin-bottom:8px;">Analysis Summary</div>
+      <div style="font-size:13px;color:var(--text-2);line-height:1.6;">{{ analysis.summary }}</div>
+      <div style="display:flex;gap:16px;margin-top:12px;">
+        <div style="font-size:11px;color:var(--text-3);"><strong style="color:var(--text);">{{ analysis.version_count }}</strong> Versions</div>
+        <div style="font-size:11px;color:var(--text-3);"><strong style="color:var(--text);">{{ analysis.comparison_count }}</strong> Comparisons</div>
+        <div style="font-size:11px;color:var(--text-3);"><strong style="color:var(--text);">{{ analysis.chain_span_days }}</strong> Days Span</div>
+        <div style="font-size:11px;color:var(--text-3);"><strong style="color:var(--text);">{{ analysis.patterns|length }}</strong> Patterns</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="two-col" style="gap:20px;">
+  <!-- Feature Vector -->
+  <div class="card">
+    <div class="card-header"><div class="card-title">Feature Analysis Vector</div></div>
+    <div style="display:flex;flex-direction:column;gap:12px;margin-top:14px;">
+      {% for feat_name, feat_val in analysis.features.items %}
+      <div>
+        <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;">
+          <span style="color:var(--text-2);">{{ feat_name|cut:"_"|title }}</span>
+          <span style="font-weight:600;color:{% if feat_val > 0.5 %}#ef4444{% elif feat_val > 0.25 %}#f59e0b{% else %}#10b981{% endif %};">{% widthratio feat_val 1 100 %}%</span>
+        </div>
+        <div style="height:8px;background:var(--bg-3);border-radius:4px;overflow:hidden;">
+          <div style="height:100%;width:{% widthratio feat_val 1 100 %}%;background:{% if feat_val > 0.5 %}#ef4444{% elif feat_val > 0.25 %}#f59e0b{% else %}#10b981{% endif %};border-radius:4px;transition:width .5s;"></div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Detected Patterns -->
+  <div class="card">
+    <div class="card-header"><div class="card-title">Detected Tampering Patterns</div></div>
+    {% if analysis.patterns %}
+    <div style="display:flex;flex-direction:column;gap:10px;margin-top:12px;">
+      {% for p in analysis.patterns %}
+      <div style="padding:12px;border-radius:var(--r-md);border-left:3px solid {% if p.severity == 'CRITICAL' %}#dc2626{% elif p.severity == 'HIGH' %}#ef4444{% else %}#f59e0b{% endif %};background:var(--bg-2);">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+          <span style="font-size:12px;font-weight:700;color:{% if p.severity == 'CRITICAL' %}#dc2626{% elif p.severity == 'HIGH' %}#ef4444{% else %}#f59e0b{% endif %};">{{ p.label }}</span>
+          <span style="font-size:9px;padding:1px 6px;border-radius:4px;background:{% if p.severity == 'CRITICAL' %}rgba(220,38,38,.1){% elif p.severity == 'HIGH' %}rgba(239,68,68,.08){% else %}rgba(245,158,11,.08){% endif %};color:{% if p.severity == 'CRITICAL' %}#dc2626{% elif p.severity == 'HIGH' %}#ef4444{% else %}#f59e0b{% endif %};font-weight:600;">{{ p.severity }}</span>
+          <span style="font-size:10px;color:var(--text-3);margin-left:auto;">{{ p.confidence }}% confidence</span>
+        </div>
+        <div style="font-size:12px;color:var(--text-2);">{{ p.description }}</div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state" style="padding:32px;">
+      <div class="empty-icon-good">✓</div>
+      <div class="empty-title" style="color:#10b981;">No Tampering Patterns Detected</div>
+      <div class="empty-sub">Document evolution appears normal and consistent.</div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

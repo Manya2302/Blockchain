@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+{% block title %}Admin Dashboard{% endblock %}
+{% block nav_dash %}active{% endblock %}
+{% block breadcrumb %}<strong>System Monitor</strong>{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div><h1 class="page-title">System Monitor</h1><p class="page-sub">Full visibility — TAP-DEV Phase 2</p></div>
+  <span class="role-badge role-admin">ADMIN</span>
+</div>
+
+<div class="stats-grid">
+  <div class="stat-card accent-border"><div class="stat-num">{{ stats.users }}</div><div class="stat-label">Users</div><div class="stat-sub">{{ stats.submitters }} sub · {{ stats.analysts }} analyst · {{ stats.admins }} admin</div></div>
+  <div class="stat-card green-border"><div class="stat-num">{{ stats.evidences }}</div><div class="stat-label">Evidence Items</div><div class="stat-sub">Avg trust {{ stats.avg_trust|floatformat:0 }}/100</div></div>
+  <div class="stat-card {% if stats.anomalies > 0 %}amber-border{% endif %}"><div class="stat-num" style="{% if stats.anomalies > 0 %}color:var(--amber){% endif %}">{{ stats.anomalies }}</div><div class="stat-label">Open Anomalies</div></div>
+  <div class="stat-card red-border"><div class="stat-num" style="color:var(--red)">{{ stats.high_risk }}</div><div class="stat-label">High Risk (&lt;50)</div></div>
+</div>
+
+<div class="two-col">
+  <div class="card">
+    <div class="card-head"><h2 class="card-title">User Growth — 7 Days</h2></div>
+    <div class="chart-wrap"><canvas id="userTrendChart"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-head"><h2 class="card-title">Activity by Category</h2></div>
+    <div class="chart-wrap"><canvas id="catChart"></canvas></div>
+  </div>
+</div>
+
+<div class="two-col">
+  <div class="card">
+    <div class="card-head"><h2 class="card-title">Recent Users</h2><a href="{% url 'dashboard:user_list' %}" class="card-link">Manage all →</a></div>
+    <table class="data-table">
+      <thead><tr><th>User</th><th>Role</th><th>Status</th><th>Joined</th><th></th></tr></thead>
+      <tbody>{% for u in users %}
+        <tr>
+          <td><div class="user-cell"><div class="user-avatar-sm">{{ u.username|slice:":1"|upper }}</div><div><div style="font-weight:500;font-size:13px;">{{ u.username }}</div><div style="font-size:11px;color:var(--text-3);">{{ u.email|default:"—" }}</div></div></div></td>
+          <td><span class="role-badge role-{{ u.profile.role|lower }}">{{ u.profile.role }}</span></td>
+          <td>{% if u.is_active %}<span class="status-badge status-verified">Active</span>{% else %}<span class="status-badge status-flagged">Inactive</span>{% endif %}</td>
+          <td style="color:var(--text-3);font-size:12px;">{{ u.date_joined|date:"M d, Y" }}</td>
+          <td><a href="{% url 'dashboard:user_edit' u.pk %}" class="table-link">Edit</a></td>
+        </tr>
+      {% endfor %}</tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><h2 class="card-title">Live Activity Log</h2></div>
+    <div>{% for log in activities %}
+      <div class="audit-row">
+        <span class="audit-cat cat-{{ log.category|lower }}">{{ log.category }}</span>
+        <span style="font-weight:600;font-size:12px;min-width:80px;flex-shrink:0;">{{ log.user.username|default:"sys" }}</span>
+        <span style="flex:1;font-size:12px;color:var(--text-2);">{{ log.action }}</span>
+        <span style="font-family:var(--font-mono);font-size:11px;color:var(--text-3);flex-shrink:0;">{{ log.timestamp|date:"H:i:s" }}</span>
+      </div>{% empty %}
+      <div class="empty-state"><p>No activity yet.</p></div>{% endfor %}
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-head"><h2 class="card-title">Integration Roadmap</h2></div>
+  <div class="roadmap-grid">
+    <div class="roadmap-item roadmap-active"><div class="roadmap-phase">Phase 1+2 · Now</div><div class="roadmap-name">Rule-Based + Simulation</div><div class="roadmap-desc">SHA-256 · Event chains · 8-rule detection · Trust scoring · Blockchain sim · IPFS sim · PDF reports · Dark/light UI</div><div class="roadmap-status"><span class="active-dot"></span>Live</div></div>
+    <div class="roadmap-item"><div class="roadmap-phase">Phase 3</div><div class="roadmap-name">Real Blockchain</div><div class="roadmap-desc">Ethereum mainnet · Hyperledger Fabric · Solidity contracts · Web3.py · IPFS live node · Multi-chain anchoring</div><div class="roadmap-status">Planned</div></div>
+    <div class="roadmap-item"><div class="roadmap-phase">Phase 4</div><div class="roadmap-name">AI Detection</div><div class="roadmap-desc">BiLSTM sequence model · CNN feature extraction · Anomaly probability per event · Real-time scoring pipeline</div><div class="roadmap-status">Planned</div></div>
+    <div class="roadmap-item"><div class="roadmap-phase">Phase 5</div><div class="roadmap-name">Full Stack</div><div class="roadmap-desc">React/Next.js frontend · Node.js microservices · REST + GraphQL API · WebSocket real-time updates</div><div class="roadmap-status">Planned</div></div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const userTrend = {{ user_trend_json|safe }};
+const catData   = {{ cat_data_json|safe }};
+const catColors = {AUTH:'#3b82f6',EVIDENCE:'#00d4ff',ADMIN:'#ef4444',PROFILE:'#10b981',REPORT:'#8b5cf6',BLOCKCHAIN:'#f59e0b',SYSTEM:'#4d6882'};
+document.addEventListener('DOMContentLoaded', () => {
+  initCharts([
+    {id:'userTrendChart',type:'bar',labels:userTrend.map(d=>d.day),datasets:[{label:'New Users',data:userTrend.map(d=>d.count),backgroundColor:'rgba(0,212,255,0.25)',borderColor:'#00d4ff',borderRadius:4}]},
+    {id:'catChart',type:'doughnut',labels:catData.map(d=>d.category),datasets:[{data:catData.map(d=>d.c),backgroundColor:catData.map(d=>catColors[d.category]||'#4d6882'),borderWidth:0}],options:{plugins:{legend:{display:true,position:'bottom'}}}}
+  ]);
+});
+</script>
+{% endblock %}

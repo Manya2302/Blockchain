@@ -1,0 +1,51 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Contact T-Vault</title>
+  <link rel="stylesheet" href="{% static 'css/landing.css' %}">
+</head>
+<body class="tv-page">
+  <nav class="tv-navbar">
+    <a href="{% url 'home:landing' %}" class="tv-brand"><span class="tv-logo">TV</span><span>T-Vault</span></a>
+    <div class="tv-navlinks">
+      <a href="{% url 'home:landing' %}">Home</a>
+      <a href="{% url 'home:about' %}">About</a>
+      <a href="{% url 'home:faq' %}">FAQ</a>
+      <a href="{% url 'home:contact' %}">Contact</a>
+    </div>
+    <a href="{% url 'users:login' %}" class="tv-navbtn">Access Vault</a>
+  </nav>
+
+  <main class="content-page contact-page">
+    <section class="content-hero">
+      <span class="eyebrow">Contact</span>
+      <h1>Talk to the vault team.</h1>
+      <p>Ask about deployment, research, integrations, or temporal attack protection for your cloud and IoT systems.</p>
+    </section>
+    <section class="contact-layout">
+      <form method="post" class="contact-card" novalidate>
+        {% csrf_token %}
+        <label>Name{{ form.name }}</label>
+        <label>Email{{ form.email }}</label>
+        <label>Subject{{ form.subject }}</label>
+        <label>Message{{ form.message }}</label>
+        <button type="submit" class="tv-primary-btn">Send Message</button>
+      </form>
+      <aside class="contact-aside">
+        <h2>Security response</h2>
+        <p>For urgent research or incident workflows, include your affected system type, timeline, and expected integration path.</p>
+        <div><strong>Email</strong><span>security@t-vault.local</span></div>
+        <div><strong>Scope</strong><span>Enterprise, cloud, IoT, forensic chain-of-custody</span></div>
+      </aside>
+    </section>
+  </main>
+
+  <footer class="tv-footer">
+    <div><a href="{% url 'home:landing' %}" class="tv-brand"><span class="tv-logo">TV</span><span>T-Vault</span></a><p>Blockchain-secured temporal cyber defense.</p></div>
+    <div class="footer-links"><a href="{% url 'home:about' %}">About</a><a href="{% url 'home:faq' %}">FAQ</a><a href="{% url 'home:contact' %}">Contact</a><a href="{% url 'users:login' %}">Login</a></div>
+  </footer>
+</body>
+</html>

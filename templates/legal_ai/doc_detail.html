@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% block title %}{{ doc.title|truncatechars:40 }}{% endblock %}
+{% block nav_legalai %}active{% endblock %}
+{% block breadcrumb %}<a href="{% url 'legal_ai:dashboard' %}">Legal AI</a> / Document{% endblock %}
+{% block content %}
+<div class="card" style="margin-bottom:20px;">
+  <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+    <div style="font-size:36px;">📄</div>
+    <div style="flex:1;">
+      <div style="font-size:11px;color:var(--text-3);font-family:var(--font-mono);">{{ doc.get_doc_type_display }} · {{ doc.jurisdiction }} · {{ doc.language|upper }}</div>
+      <div style="font-size:20px;font-weight:700;">{{ doc.title }}</div>
+      <div style="font-size:12px;color:var(--text-2);margin-top:4px;">Generated {{ doc.generated_at|date:"M d, Y H:i" }} · {{ doc.word_count }} words · {{ doc.page_count }} page(s)</div>
+    </div>
+    <div style="text-align:right;">
+      <div class="doc-status {{ doc.status }}" style="font-size:14px;font-weight:700;">{{ doc.status }}</div>
+      {% if doc.status == 'DRAFT' and request.user.profile.role == 'ADMIN' %}
+      <form method="post" action="{% url 'legal_ai:approve' doc.id %}" style="margin-top:8px;">{% csrf_token %}
+        <button type="submit" class="btn btn-primary btn-sm">✓ Approve & Sign</button>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+</div>
+<div style="display:grid;grid-template-columns:3fr 1fr;gap:20px;">
+  <div>
+    <div class="card">
+      <div class="card-header"><div class="card-title">Document Content</div></div>
+      <div class="doc-content-view" style="margin-top:12px;">{{ doc.content }}</div>
+    </div>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:14px;">
+    <div class="card">
+      <div class="card-header"><div class="card-title">Legal Citations</div></div>
+      {% for cite in doc.legal_citations %}
+      <div class="citation-row">
+        <span class="citation-ref">{{ cite.ref }}</span>
+        <span style="font-size:11px;color:var(--text-2);">{{ cite.topic }}</span>
+      </div>
+      {% empty %}<div style="font-size:12px;color:var(--text-3);padding:8px 0;">No citations.</div>
+      {% endfor %}
+    </div>
+    <div class="card">
+      <div class="card-header"><div class="card-title">Verification</div></div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:10px;">
+        {% if doc.blockchain_proof %}
+        <div style="font-size:11px;color:var(--text-3);">Blockchain Proof</div>
+        <div style="font-family:var(--font-mono);font-size:10px;color:var(--accent);word-break:break-all;background:var(--bg-2);padding:8px;border-radius:var(--r-sm);">{{ doc.blockchain_proof }}</div>
+        {% endif %}
+        {% if doc.digital_signature %}
+        <div style="font-size:11px;color:var(--text-3);">Digital Signature</div>
+        <div style="font-family:var(--font-mono);font-size:10px;color:#a78bfa;word-break:break-all;background:var(--bg-2);padding:8px;border-radius:var(--r-sm);">{{ doc.digital_signature|truncatechars:40 }}...</div>
+        {% endif %}
+        {% if doc.approved_by %}
+        <div style="font-size:11px;background:rgba(16,185,129,.08);color:#10b981;padding:6px 10px;border-radius:var(--r-sm);border:1px solid rgba(16,185,129,.2);">✓ Approved by {{ doc.approved_by.username }}</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

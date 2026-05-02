@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% block title %}Evidence Translation{% endblock %}
+{% block nav_gintel %}active{% endblock %}
+{% block breadcrumb %}<a href="{% url 'global_intel:map' %}">Global Intel</a> / Evidence Translation{% endblock %}
+{% block content %}
+<div class="p5-hero">
+  <div class="p5-hero-label">Phase 5 · AI Neural Machine Translation · ISO 17100:2015</div>
+  <div class="p5-hero-title">🌐 Forensic Evidence Translation</div>
+  <div class="p5-hero-sub">Translate evidence across international jurisdictions · 10 languages · Certified for legal use</div>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;">
+  <div class="translate-panel">
+    <h3 style="font-size:14px;font-weight:600;margin-bottom:12px;">Translate Evidence</h3>
+    <form method="post">{% csrf_token %}
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+        <div><label class="form-label" style="font-size:11px;">Source Language</label>
+          <select name="source_language" class="lang-select">{% for val,lbl in languages %}<option value="{{ val }}" {% if val == "en" %}selected{% endif %}>{{ lbl }}</option>{% endfor %}</select></div>
+        <div><label class="form-label" style="font-size:11px;">Target Language</label>
+          <select name="target_language" class="lang-select">{% for val,lbl in languages %}<option value="{{ val }}" {% if val == "fr" %}selected{% endif %}>{{ lbl }}</option>{% endfor %}</select></div>
+      </div>
+      <div class="form-group"><label class="form-label" style="font-size:11px;">Source Text / Evidence Content</label>
+        <textarea name="source_text" class="form-control" rows="6" placeholder="Paste evidence description, forensic findings, legal text or any document content to translate..." required></textarea></div>
+      <button type="submit" class="btn btn-primary" style="width:100%;margin-top:10px;background:linear-gradient(135deg,#7c3aed,#db2777);">🌐 Translate</button>
+    </form>
+  </div>
+  <div class="translate-panel">
+    <h3 style="font-size:14px;font-weight:600;margin-bottom:12px;">Recent Translations</h3>
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      {% for tr in translations %}
+      <div style="padding:10px;background:var(--bg-2);border-radius:var(--r-sm);border:1px solid var(--border);">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+          <span style="font-family:var(--font-mono);font-size:10px;color:var(--accent);">{{ tr.source_language|upper }} → {{ tr.target_language|upper }}</span>
+          <span class="control-status {{ tr.status }}" style="font-size:9px;">{{ tr.status }}</span>
+          <span style="font-size:10px;color:var(--text-3);margin-left:auto;">{{ tr.created_at|date:"M d H:i" }}</span>
+        </div>
+        <div style="font-size:12px;color:var(--text-2);">{{ tr.source_text|truncatechars:60 }}</div>
+        {% if tr.translated_text %}<div class="translation-output" style="margin-top:6px;min-height:auto;font-size:11px;padding:8px;">{{ tr.translated_text|truncatechars:150 }}</div>{% endif %}
+      </div>
+      {% empty %}
+      <div style="text-align:center;padding:24px;color:var(--text-3);font-size:13px;">No translations yet.</div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

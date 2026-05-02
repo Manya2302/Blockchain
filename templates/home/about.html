@@ -1,0 +1,41 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>About T-Vault</title>
+  <link rel="stylesheet" href="{% static 'css/landing.css' %}">
+</head>
+<body class="tv-page">
+  <nav class="tv-navbar">
+    <a href="{% url 'home:landing' %}" class="tv-brand"><span class="tv-logo">TV</span><span>T-Vault</span></a>
+    <div class="tv-navlinks">
+      <a href="{% url 'home:landing' %}">Home</a>
+      <a href="{% url 'home:about' %}">About</a>
+      <a href="{% url 'home:faq' %}">FAQ</a>
+      <a href="{% url 'home:contact' %}">Contact</a>
+      <a href="{% url 'users:login' %}">Access</a>
+    </div>
+    <a href="{% url 'users:register' %}" class="tv-navbtn">Initialize Vault</a>
+  </nav>
+
+  <main class="content-page">
+    <section class="content-hero">
+      <span class="eyebrow">About the platform</span>
+      <h1>Temporal defense for attacks that unfold across time.</h1>
+      <p>T-Vault protects evidence, IoT telemetry, cloud events, and enterprise workflows by linking every security action into a verifiable temporal chain.</p>
+    </section>
+    <section class="content-grid">
+      <article><span>01</span><h2>Temporal AI</h2><p>Sequence models inspect behavior across event windows instead of only checking isolated alerts.</p></article>
+      <article><span>02</span><h2>Blockchain Proof</h2><p>Critical hashes and security events are anchored into tamper-resistant ledgers for verifiable trust.</p></article>
+      <article><span>03</span><h2>Forensic Ready</h2><p>Every action becomes audit-friendly evidence with provenance, actor history, and risk scoring.</p></article>
+    </section>
+  </main>
+
+  <footer class="tv-footer">
+    <div><a href="{% url 'home:landing' %}" class="tv-brand"><span class="tv-logo">TV</span><span>T-Vault</span></a><p>Blockchain-secured temporal cyber defense.</p></div>
+    <div class="footer-links"><a href="{% url 'home:about' %}">About</a><a href="{% url 'home:faq' %}">FAQ</a><a href="{% url 'home:contact' %}">Contact</a><a href="{% url 'users:login' %}">Login</a></div>
+  </footer>
+</body>
+</html>

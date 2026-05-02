@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+{% block title %}Verification Logs{% endblock %}{% block nav_zkp %}active{% endblock %}
+{% block breadcrumb %}<a href="{% url 'zkp:dashboard' %}">ZKP</a> / Verification Logs{% endblock %}
+{% block content %}
+<div class="page-header" style="margin-bottom:20px;">
+  <div class="page-header-left">
+    <div class="page-title">📜 Verification Audit Log</div>
+    <div class="page-subtitle">Complete audit trail of all verification activities</div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header"><div class="card-title">All Verification Events</div><span style="font-size:11px;color:var(--text-3);">{{ logs|length }} entries</span></div>
+  {% if logs %}
+  <div style="display:flex;flex-direction:column;margin-top:12px;">
+    {% for log in logs %}
+    <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);font-size:12px;">
+      <span style="width:8px;height:8px;border-radius:50%;background:{% if log.success %}#10b981{% else %}#ef4444{% endif %};flex-shrink:0;"></span>
+      <span style="font-weight:600;color:var(--text);width:70px;font-size:11px;">{{ log.action }}</span>
+      <span style="flex:1;color:var(--text-2);">{{ log.detail|truncatechars:60 }}</span>
+      {% if log.actor %}<span style="color:var(--text-3);font-size:11px;">{{ log.actor.username }}</span>{% endif %}
+      {% if log.ip_address %}<span style="color:var(--text-3);font-size:10px;font-family:var(--font-mono);">{{ log.ip_address }}</span>{% endif %}
+      <span style="color:var(--text-3);font-size:11px;flex-shrink:0;">{{ log.timestamp|date:"M d H:i:s" }}</span>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state" style="padding:32px;">
+    <div class="empty-icon">📜</div>
+    <div class="empty-title">No verification events</div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

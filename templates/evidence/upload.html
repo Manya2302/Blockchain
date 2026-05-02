@@ -1,0 +1,109 @@
+{% extends 'base.html' %}{% block title %}Upload Evidence{% endblock %}{% block nav_upload %}active{% endblock %}
+{% block breadcrumb %}Evidence / <strong>Upload</strong>{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div><h1 class="page-title">Upload Evidence</h1><p class="page-sub">SHA-256 hashed · Chain-linked · Anomaly scanned on submit</p></div>
+  <a href="{% url 'evidence:list' %}" class="btn btn-ghost">← Back</a>
+</div>
+<div class="upload-layout">
+  <div class="card">
+    <form method="post" enctype="multipart/form-data" novalidate id="upload-form">{% csrf_token %}
+      <div class="drop-zone" id="drop-zone">
+        <div class="dz-icon"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></div>
+        <div class="dz-text">Drop file here or <label for="id_file" class="dz-browse">browse</label></div>
+        <div class="dz-hint">PDF · Images · DOCX · TXT · ZIP — Max 50 MB</div>
+        {{ form.file }}
+        <div class="dz-preview" id="dz-preview"></div>
+      </div>
+      <div class="form-group"><label class="form-label">Evidence Title <span class="required">*</span></label>{{ form.title }}{% if form.title.errors %}<div class="form-error">{{ form.title.errors.0 }}</div>{% endif %}</div>
+      <div class="form-group"><label class="form-label">Description</label>{{ form.description }}</div>
+      <div class="form-row-2">
+        <div class="form-group"><label class="form-label">Case ID</label>{{ form.case_id }}</div>
+        <div class="form-group"><label class="form-label">Tags</label>{{ form.tags }}</div>
+      </div>
+
+      <!-- Self-Destructing Documents: Expiry Controls -->
+      <div class="expiry-section" style="margin-top:16px;padding:16px;border-radius:var(--r-md);border:1px solid rgba(249,115,22,.15);background:rgba(249,115,22,.03);">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:600;color:var(--text);">
+            {{ form.expiry_enabled }}
+            <span>⏰ Self-Destructing Document</span>
+          </label>
+          <span style="font-size:10px;padding:2px 6px;border-radius:4px;background:rgba(249,115,22,.1);color:#f97316;">Optional</span>
+        </div>
+        <div id="expiry-options" style="display:none;">
+          <div style="font-size:11px;color:var(--text-3);margin-bottom:10px;">
+            Set an expiry policy. After expiry, document content is automatically deleted while audit trail is preserved.
+          </div>
+          <div class="form-group">
+            <label class="form-label">Expiry Type</label>
+            {{ form.expiry_type }}
+          </div>
+          <div class="form-row-2" id="timed-expiry-fields" style="display:none;">
+            <div class="form-group">
+              <label class="form-label">Expire After (hours)</label>
+              {{ form.expiry_hours }}
+            </div>
+            <div class="form-group">
+              <label class="form-label">Or Set Exact Date</label>
+              {{ form.expiry_date }}
+            </div>
+          </div>
+          <div style="padding:10px;border-radius:var(--r-sm);background:rgba(249,115,22,.06);border:1px solid rgba(249,115,22,.12);font-size:11px;color:var(--text-2);margin-top:8px;">
+            <strong style="color:#f97316;">⚠ Warning:</strong> Expired documents cannot be recovered. The file will be permanently deleted, IPFS pins removed, and blockchain records updated. Only the audit trail and metadata remain.
+          </div>
+        </div>
+      </div>
+
+      {% if form.file.errors %}<div class="form-error-block">{{ form.file.errors.0 }}</div>{% endif %}
+      <button type="submit" class="btn btn-primary btn-full btn-lg" id="submit-btn" style="margin-top:16px;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        Submit Evidence &amp; Create Chain
+      </button>
+    </form>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:16px;">
+    <div class="card" style="border-color:rgba(0,212,255,.15);">
+      <h3 class="card-title" style="margin-bottom:14px">What happens on upload?</h3>
+      <ol style="list-style:none;display:flex;flex-direction:column;gap:10px;">
+        <li style="display:flex;gap:12px;align-items:flex-start;font-size:13px;color:var(--text-2);"><span style="font-family:var(--font-mono);font-size:11px;color:var(--accent);flex-shrink:0;padding-top:1px;font-weight:600;">01</span><span><strong style="color:var(--text);">SHA-256 Hash</strong> — immutable file fingerprint computed from bytes</span></li>
+        <li style="display:flex;gap:12px;align-items:flex-start;font-size:13px;color:var(--text-2);"><span style="font-family:var(--font-mono);font-size:11px;color:var(--accent);flex-shrink:0;padding-top:1px;font-weight:600;">02</span><span><strong style="color:var(--text);">UPLOAD Event</strong> — genesis of the tamper-evident chain</span></li>
+        <li style="display:flex;gap:12px;align-items:flex-start;font-size:13px;color:var(--text-2);"><span style="font-family:var(--font-mono);font-size:11px;color:var(--accent);flex-shrink:0;padding-top:1px;font-weight:600;">03</span><span><strong style="color:var(--text);">Chain Hash</strong> — SHA-256(type+time+actor+prev_hash)</span></li>
+        <li style="display:flex;gap:12px;align-items:flex-start;font-size:13px;color:var(--text-2);"><span style="font-family:var(--font-mono);font-size:11px;color:var(--accent);flex-shrink:0;padding-top:1px;font-weight:600;">04</span><span><strong style="color:var(--text);">AI + Rule Scan</strong> — BiLSTM + 8 rules checked automatically</span></li>
+        <li style="display:flex;gap:12px;align-items:flex-start;font-size:13px;color:var(--text-2);"><span style="font-family:var(--font-mono);font-size:11px;color:var(--accent);flex-shrink:0;padding-top:1px;font-weight:600;">05</span><span><strong style="color:var(--text);">Trust Score</strong> — 0–100 computed from anomalies &amp; AI probability</span></li>
+        <li style="display:flex;gap:12px;align-items:flex-start;font-size:13px;color:var(--text-2);"><span style="font-family:var(--font-mono);font-size:11px;color:var(--accent);flex-shrink:0;padding-top:1px;font-weight:600;">06</span><span><strong style="color:var(--text);">Blockchain Anchor</strong> — hash registered on Ethereum ledger</span></li>
+      </ol>
+    </div>
+    <div class="card" style="border-color:rgba(249,115,22,.2);background:rgba(249,115,22,.03);">
+      <h3 class="card-title" style="margin-bottom:12px;color:#f97316;">⏰ Self-Destructing Documents</h3>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <div style="display:flex;gap:8px;align-items:center;font-size:12px;color:var(--text-2);"><span style="font-family:var(--font-mono);font-size:9px;background:rgba(249,115,22,.1);color:#f97316;padding:1px 6px;border-radius:2px;">NEW</span>Set time-based or event-based expiry</div>
+        <div style="display:flex;gap:8px;align-items:center;font-size:12px;color:var(--text-2);"><span style="font-family:var(--font-mono);font-size:9px;background:rgba(249,115,22,.1);color:#f97316;padding:1px 6px;border-radius:2px;">AUTO</span>Content auto-deleted on expiry</div>
+        <div style="display:flex;gap:8px;align-items:center;font-size:12px;color:var(--text-2);"><span style="font-family:var(--font-mono);font-size:9px;background:rgba(249,115,22,.1);color:#f97316;padding:1px 6px;border-radius:2px;">AUDIT</span>Timeline &amp; blockchain audit trail preserved</div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Self-Destructing Documents: Toggle expiry options
+const expiryToggle = document.getElementById('expiry-toggle');
+const expiryOptions = document.getElementById('expiry-options');
+const expiryType = document.getElementById('expiry-type');
+const timedFields = document.getElementById('timed-expiry-fields');
+
+if (expiryToggle) {
+  expiryToggle.addEventListener('change', () => {
+    expiryOptions.style.display = expiryToggle.checked ? 'block' : 'none';
+  });
+}
+if (expiryType) {
+  expiryType.addEventListener('change', () => {
+    timedFields.style.display = expiryType.value === 'TIMED' ? 'grid' : 'none';
+  });
+}
+</script>
+{% endblock %}

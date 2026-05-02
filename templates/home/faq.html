@@ -1,0 +1,40 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>T-Vault FAQ</title>
+  <link rel="stylesheet" href="{% static 'css/landing.css' %}">
+</head>
+<body class="tv-page">
+  <nav class="tv-navbar">
+    <a href="{% url 'home:landing' %}" class="tv-brand"><span class="tv-logo">TV</span><span>T-Vault</span></a>
+    <div class="tv-navlinks">
+      <a href="{% url 'home:landing' %}">Home</a>
+      <a href="{% url 'home:about' %}">About</a>
+      <a href="{% url 'home:faq' %}">FAQ</a>
+      <a href="{% url 'home:contact' %}">Contact</a>
+    </div>
+    <a href="{% url 'users:login' %}" class="tv-navbtn">Access Vault</a>
+  </nav>
+  <main class="content-page">
+    <section class="content-hero">
+      <span class="eyebrow">FAQ</span>
+      <h1>Questions before you initialize the vault.</h1>
+      <p>Short answers about the temporal AI, blockchain validation, and where the system fits in your security workflow.</p>
+    </section>
+    <section class="faq-list">
+      <details open><summary>What is a temporal attack?</summary><p>A temporal attack manipulates event order, timing, or staged activity so systems miss the real attack sequence.</p></details>
+      <details><summary>Why use blockchain?</summary><p>Blockchain anchoring makes high-value security events and evidence hashes externally verifiable and tamper-resistant.</p></details>
+      <details><summary>Does T-Vault replace SIEM tools?</summary><p>No. It complements SIEM/SOC workflows by adding temporal sequence validation and forensic chain integrity.</p></details>
+      <details><summary>Can it protect IoT and cloud systems?</summary><p>Yes. The model is designed around event streams from devices, cloud infrastructure, evidence files, and user activity.</p></details>
+      <details><summary>Is this production connected to a real chain?</summary><p>This project currently includes simulation-ready blockchain and IPFS flows, with fields reserved for live integration.</p></details>
+    </section>
+  </main>
+  <footer class="tv-footer">
+    <div><a href="{% url 'home:landing' %}" class="tv-brand"><span class="tv-logo">TV</span><span>T-Vault</span></a><p>Blockchain-secured temporal cyber defense.</p></div>
+    <div class="footer-links"><a href="{% url 'home:about' %}">About</a><a href="{% url 'home:faq' %}">FAQ</a><a href="{% url 'home:contact' %}">Contact</a><a href="{% url 'users:login' %}">Login</a></div>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% block title %}Resume Verification{% endblock %}{% block nav_zkp %}active{% endblock %}
+{% block breadcrumb %}<a href="{% url 'zkp:dashboard' %}">ZKP</a> / Resume Verification{% endblock %}
+{% block content %}
+<div class="page-header" style="margin-bottom:20px;">
+  <div class="page-header-left">
+    <div class="page-title">📋 Resume & Credential Verification</div>
+    <div class="page-subtitle">Zero-Knowledge proof system for verifying degrees, skills, and certifications without exposing documents</div>
+  </div>
+  <a href="{% url 'zkp:submit_credential' %}" class="btn btn-primary">+ Submit Credential</a>
+</div>
+
+<div class="stats-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:20px;">
+  <div class="stat-card"><div class="stat-value">{{ stats.total }}</div><div class="stat-label">Total Credentials</div></div>
+  <div class="stat-card"><div class="stat-value risk-safe">{{ stats.verified }}</div><div class="stat-label">Verified</div></div>
+  <div class="stat-card"><div class="stat-value" style="color:#f59e0b;">{{ stats.pending }}</div><div class="stat-label">Pending</div></div>
+  <div class="stat-card"><div class="stat-value risk-critical">{{ stats.failed }}</div><div class="stat-label">Failed</div></div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">Your Credentials</div>
+    <a href="{% url 'zkp:submit_credential' %}" class="btn btn-ghost" style="font-size:11px;">+ New</a>
+  </div>
+  {% if credentials %}
+  <div style="display:flex;flex-direction:column;gap:8px;margin-top:12px;">
+    {% for cred in credentials %}
+    <div style="padding:14px;border-radius:var(--r-md);border:1px solid {% if cred.status == 'VERIFIED' %}rgba(16,185,129,.2){% elif cred.status == 'FAILED' %}rgba(239,68,68,.2){% else %}var(--border){% endif %};background:var(--glass);">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div style="width:40px;height:40px;border-radius:var(--r-sm);background:{% if cred.status == 'VERIFIED' %}rgba(16,185,129,.1){% elif cred.status == 'FAILED' %}rgba(239,68,68,.08){% else %}rgba(245,158,11,.08){% endif %};display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">
+          {% if cred.claim_type == 'DEGREE' %}🎓{% elif cred.claim_type == 'CERTIFICATION' %}📜{% elif cred.claim_type == 'SKILL' %}💡{% elif cred.claim_type == 'EMPLOYMENT' %}💼{% else %}📋{% endif %}
+        </div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:14px;font-weight:600;color:var(--text);">{{ cred.claim_title }}</div>
+          <div style="font-size:11px;color:var(--text-3);margin-top:2px;">
+            {{ cred.get_claim_type_display }} · {{ cred.issuer_name|default:"Unknown Issuer" }}
+            {% if cred.issuer %} · <span style="color:{{ cred.issuer.trust_color }};">{{ cred.issuer.trust_level }}</span>{% endif %}
+          </div>
+          {% if cred.commitment %}<div style="font-size:10px;color:var(--text-3);font-family:var(--font-mono);margin-top:2px;">Commitment: {{ cred.commitment|truncatechars:24 }}…</div>{% endif %}
+        </div>
+        <span style="padding:4px 10px;font-size:11px;font-weight:600;border-radius:6px;color:{{ cred.status_color }};background:{{ cred.status_color }}15;">
+          {% if cred.status == 'VERIFIED' %}✓{% elif cred.status == 'FAILED' %}✕{% else %}⏳{% endif %} {{ cred.status }}
+        </span>
+        <a href="{% url 'zkp:credential_detail' cred.pk %}" class="btn btn-ghost" style="font-size:11px;padding:4px 10px;">View →</a>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state" style="padding:48px;">
+    <div class="empty-icon">📋</div>
+    <div class="empty-title">No credentials submitted</div>
+    <div class="empty-sub">Submit your degree, certification, or skill proofs for zero-knowledge verification.</div>
+    <a href="{% url 'zkp:submit_credential' %}" class="btn btn-primary" style="margin-top:16px;">Submit Your First Credential →</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

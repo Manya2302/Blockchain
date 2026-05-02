@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block title %}Node Detail{% endblock %}
+{% block nav_gnet %}active{% endblock %}
+{% block breadcrumb %}<a href="{% url 'global_network:dashboard' %}">Global Network</a> / {{ node.name }}{% endblock %}
+{% block content %}
+<div class="card" style="margin-bottom:20px;">
+  <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+    <div style="font-size:40px;">🌐</div>
+    <div style="flex:1;"><div style="font-size:20px;font-weight:700;">{{ node.name }}</div>
+      <div style="font-size:13px;color:var(--text-2);">{{ node.country_name }} · {{ node.get_node_type_display }} · {{ node.blockchain }}</div>
+      <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-3);margin-top:4px;">DID: {{ node.did_identifier|default:"Pending assignment" }}</div></div>
+    <div style="text-align:right;"><span style="background:{{ node.status_color }}22;color:{{ node.status_color }};border:1px solid {{ node.status_color }}44;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700;">{{ node.status }}</span>
+      <div style="font-size:22px;font-weight:700;color:{{ node.status_color }};margin-top:6px;">{{ node.trust_score|floatformat:0 }}</div>
+      <div style="font-size:10px;color:var(--text-3);">Trust Score</div></div>
+  </div>
+</div>
+<div class="card">
+  <div class="card-header"><div class="card-title">Transfer History</div></div>
+  {% for t in transfers %}
+  <div class="transfer-row">
+    <div style="font-size:10px;color:var(--text-3);font-family:var(--font-mono);">{{ t.initiated_at|date:"M d H:i" }}</div>
+    <div class="cross-chain-arrow"><span>{{ t.source_chain }}</span><span style="color:var(--text-3);">→</span><span>{{ t.target_chain }}</span></div>
+    <div style="flex:1;font-size:12px;color:var(--text-2);">{{ t.evidence.title|truncatechars:40 }}</div>
+    <span class="transfer-status {{ t.status }}">{{ t.status }}</span>
+  </div>
+  {% empty %}<div style="padding:16px;color:var(--text-3);font-size:13px;">No transfers yet.</div>
+  {% endfor %}
+</div>
+{% endblock %}

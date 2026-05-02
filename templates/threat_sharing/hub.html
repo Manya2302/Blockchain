@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+{% block title %}Threat Intelligence Hub{% endblock %}
+{% block nav_tshare %}active{% endblock %}
+{% block breadcrumb %}Global Threat Intelligence Hub{% endblock %}
+{% block content %}
+<div class="p5-hero">
+  <div class="p5-hero-label">Phase 5 · STIX 2.1 · MITRE ATT&CK · Anonymous Sharing</div>
+  <div class="p5-hero-title">🛡 Global Threat Intelligence Hub</div>
+  <div class="p5-hero-sub">Anonymously share and consume threat signatures · STIX 2.1 format · MITRE ATT&CK TTPs</div>
+</div>
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;">
+  <div class="p5-stat"><div class="p5-stat-val">{{ stats.total }}</div><div class="p5-stat-label">Signatures</div></div>
+  <div class="p5-stat"><div class="p5-stat-val" style="color:#dc2626;">{{ stats.critical }}</div><div class="p5-stat-label">Critical</div></div>
+  <div class="p5-stat"><div class="p5-stat-val" style="color:#10b981;">{{ stats.total_matches }}</div><div class="p5-stat-label">Global Matches</div></div>
+  <div class="p5-stat"><div class="p5-stat-val" style="color:#a78bfa;">{{ stats.contributors }}</div><div class="p5-stat-label">Contributors</div></div>
+</div>
+<div style="display:grid;grid-template-columns:2fr 1fr;gap:20px;">
+  <div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+      <h2 style="font-size:14px;font-weight:600;">Active Threat Signatures</h2>
+      <a href="{% url 'threat_sharing:contribute' %}" class="btn btn-primary btn-sm">+ Contribute</a>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      {% for sig in sigs %}
+      <div class="threat-sig-card">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+          <span style="font-size:12px;font-weight:700;color:var(--text);">{{ sig.get_threat_class_display }}</span>
+          <span class="ioc-type-pill">{{ sig.ioc_type }}</span>
+          {% if sig.is_anonymous %}<span style="font-size:10px;color:var(--text-3);">🔒 Anonymous</span>{% endif %}
+          <span class="stix-badge">STIX 2.1</span>
+          <span style="margin-left:auto;font-size:11px;color:var(--text-3);">{{ sig.contributed_at|date:"M d" }}</span>
+        </div>
+        <div style="font-size:12px;color:var(--text-2);">{{ sig.description|truncatechars:120 }}</div>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:8px;">
+          <span style="font-size:10px;font-weight:700;color:{% if sig.severity == 'CRITICAL' %}#dc2626{% elif sig.severity == 'HIGH' %}#ef4444{% elif sig.severity == 'MEDIUM' %}#f59e0b{% else %}#84cc16{% endif %};">{{ sig.severity }}</span>
+          <span style="font-size:10px;color:var(--text-3);">Confidence: {{ sig.confidence_label }}</span>
+          <span style="margin-left:auto;font-size:11px;color:var(--accent);">{{ sig.global_matches }} global matches</span>
+        </div>
+      </div>
+      {% empty %}
+      <div style="text-align:center;padding:32px;color:var(--text-3);">No threat signatures yet. Be the first to contribute.</div>
+      {% endfor %}
+    </div>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:16px;">
+    <div class="card">
+      <div class="card-header"><div class="card-title">Live Threat Feeds</div></div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:10px;">
+        {% for feed in feeds %}
+        <div class="feed-card {{ feed.severity }}">
+          <div style="font-size:11px;font-weight:700;color:{% if feed.severity == 'CRITICAL' %}#dc2626{% elif feed.severity == 'HIGH' %}#ef4444{% else %}#f59e0b{% endif %};">{{ feed.get_feed_source_display }}</div>
+          <div style="font-size:12px;color:var(--text);margin:3px 0;">{{ feed.title|truncatechars:60 }}</div>
+          <div style="font-size:10px;color:var(--text-3);">{{ feed.published_at|date:"M d H:i" }}</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><div class="card-title">Threat Class Mix</div></div>
+      <canvas id="threatChart" height="180" style="margin-top:12px;"></canvas>
+    </div>
+  </div>
+</div>
+<script>
+const tc = {{ threat_class_json|safe }};
+new Chart(document.getElementById('threatChart'),{type:'doughnut',data:{labels:Object.keys(tc),datasets:[{data:Object.values(tc),backgroundColor:['rgba(220,38,38,.3)','rgba(239,68,68,.25)','rgba(245,158,11,.25)','rgba(139,92,246,.25)','rgba(16,185,129,.25)','rgba(6,182,212,.25)','rgba(167,139,250,.25)','rgba(107,114,128,.2)'],borderWidth:1}]},options:{responsive:true,plugins:{legend:{position:'bottom',labels:{color:'#94a3b8',font:{size:9},boxWidth:10}}}}});
+</script>
+{% endblock %}

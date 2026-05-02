@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+{% block title %}Developer Ecosystem{% endblock %}
+{% block nav_deveco %}active{% endblock %}
+{% block breadcrumb %}Developer Ecosystem & Marketplace{% endblock %}
+{% block content %}
+<div class="p5-hero">
+  <div class="p5-hero-label">Phase 5 · SDKs · REST APIs · Plugin Marketplace</div>
+  <div class="p5-hero-title">👨‍💻 Developer Ecosystem & Marketplace</div>
+  <div class="p5-hero-sub">Python · JavaScript · Go · Rust · Java · Flutter SDKs · REST API · Webhooks · OAuth2</div>
+</div>
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:24px;">
+  <div class="p5-stat"><div class="p5-stat-val">{{ stats.plugins }}</div><div class="p5-stat-label">Marketplace Plugins</div></div>
+  <div class="p5-stat"><div class="p5-stat-val" style="color:#10b981;">{{ stats.total_installs }}</div><div class="p5-stat-label">Total Installs</div></div>
+  <div class="p5-stat"><div class="p5-stat-val" style="color:#a78bfa;">{{ stats.my_apps }}</div><div class="p5-stat-label">My Apps</div></div>
+</div>
+<div style="display:grid;grid-template-columns:3fr 2fr;gap:20px;margin-bottom:24px;">
+  <div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+      <h2 style="font-size:14px;font-weight:600;">Plugin Marketplace</h2>
+      <a href="{% url 'developer_ecosystem:api_docs' %}" class="btn btn-ghost btn-sm">API Docs →</a>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;">
+      {% for plugin in plugins %}
+      <div class="plugin-card">
+        {% if plugin.is_certified %}<span class="certified-badge">✓ Certified</span>{% endif %}
+        <div style="font-size:22px;margin-bottom:8px;">{% if plugin.plugin_type == 'CONNECTOR' %}🔌{% elif plugin.plugin_type == 'ANALYZER' %}🔍{% elif plugin.plugin_type == 'REPORTER' %}📊{% elif plugin.plugin_type == 'VISUALIZER' %}🎨{% elif plugin.plugin_type == 'INTEGRATION' %}🔗{% else %}⚙{% endif %}</div>
+        <div style="font-size:13px;font-weight:700;color:var(--text);">{{ plugin.name }}</div>
+        <div style="margin-top:4px;"><span class="plugin-type-badge">{{ plugin.get_plugin_type_display }}</span></div>
+        <div style="font-size:11px;color:var(--text-2);margin-top:6px;">{{ plugin.description|truncatechars:70 }}</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px;">
+          <div>
+            <div class="rating-stars">{% for i in "12345" %}{% if forloop.counter <= plugin.rating|floatformat:0|add:"0" %}★{% else %}☆{% endif %}{% endfor %}</div>
+            <div style="font-size:10px;color:var(--text-3);">{{ plugin.installs }} installs</div>
+          </div>
+          {% if plugin.price > 0 %}<span style="font-size:13px;font-weight:700;color:var(--accent);">${{ plugin.price }}</span>
+          {% else %}<span style="font-size:12px;color:#10b981;font-weight:700;">Free</span>{% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:16px;">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">My Developer Apps</div>
+        <a href="{% url 'developer_ecosystem:create_app' %}" class="btn btn-ghost btn-sm">+ Create App</a>
+      </div>
+      {% for app in my_apps %}
+      <div style="padding:10px 0;border-bottom:1px solid var(--border);">
+        <div style="font-size:13px;font-weight:600;">{{ app.name }}</div>
+        <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-3);">{{ app.client_id }}</div>
+        <div style="font-size:11px;color:var(--text-3);">{{ app.api_calls_total }} calls · {{ app.status }}</div>
+      </div>
+      {% empty %}
+      <div style="padding:16px 0;text-align:center;color:var(--text-3);font-size:13px;">No apps yet. <a href="{% url 'developer_ecosystem:create_app' %}">Create one →</a></div>
+      {% endfor %}
+    </div>
+    <a href="{% url 'developer_ecosystem:api_docs' %}" class="card" style="text-decoration:none;text-align:center;padding:24px;background:linear-gradient(135deg,rgba(0,212,255,.06),rgba(167,139,250,.06));border-color:rgba(0,212,255,.2);">
+      <div style="font-size:32px;">📚</div>
+      <div style="font-size:14px;font-weight:700;color:var(--text);margin-top:8px;">API Documentation</div>
+      <div style="font-size:12px;color:var(--text-2);">REST API · SDKs · Webhooks</div>
+    </a>
+  </div>
+</div>
+{% endblock %}

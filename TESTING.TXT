@@ -1,0 +1,428 @@
+T-Vault / TAP-DEV Security Testing Report
+Date: 2026-05-01
+Tested URL: http://127.0.0.1:8000/
+Environment: Local Django development server on Windows, Python 3.13.5
+
+IMPORTANT SECURITY STATEMENT
+No web project can be honestly certified as "100% secure" from local testing alone.
+This report records tested controls, confirmed findings, remediation applied, and residual
+deployment responsibilities. Current result after hardening: LOCAL SECURITY CHECKS PASS;
+production still requires real secrets, HTTPS infrastructure, monitoring, and external testing.
+
+2026-05-01 HARDENING UPDATE
+- Django upgraded from 4.2.7 to 5.2.13 LTS.
+- SECRET_KEY and JWT secret are no longer hardcoded; they are environment-backed.
+- DEBUG is no longer globally True; local runserver is dev mode, non-runserver defaults hardened.
+- ALLOWED_HOSTS no longer uses wildcard; defaults to localhost/127.0.0.1.
+- HTTPS/HSTS/secure cookie settings added for production mode.
+- CSP and Permissions-Policy middleware added.
+- Login, register, forgot-password, OTP verification, and mobile login rate limits added.
+- Password policy strengthened to Django's standard validators with 10-character minimum.
+- Registration now excludes ADMIN and requires EMAIL_VERIFY OTP activation.
+- Evidence upload validation added for size, path traversal, extension, MIME type, and safe text.
+- Mobile API JSON parsing now enforces content type, size limits, pagination bounds, active users,
+  and generic token errors.
+- IoT ingestion now validates payload size/content type and supports nonce + HMAC replay protection;
+  signatures are required when DEBUG=False.
+- Dependency conflicts resolved: pip check now passes.
+- Security regression tests added and passing.
+
+Standards and references used:
+- CSA Cloud Controls Matrix (CCM) v4.1, released 2026-01-27:
+  Cloud framework with 207 controls across 17 domains.
+  https://cloudsecurityalliance.org/artifacts/ccm-v4-1
+- OWASP ASVS 5.0.0:
+  Web application technical security verification standard.
+  https://owasp.org/www-project-application-security-verification-standard/
+- OWASP Top 10 2021:
+  A01 Broken Access Control, A02 Cryptographic Failures, A05 Security Misconfiguration,
+  A07 Identification and Authentication Failures, A08 Software and Data Integrity Failures.
+  https://owasp.org/Top10/2021/
+- CISA Known Exploited Vulnerabilities (KEV):
+  Used as OSINT source for vulnerability management prioritization.
+  https://www.cisa.gov/known-exploited-vulnerabilities-catalog
+- Django official security releases:
+  Django 4.2.7 is old. Later 4.2 security releases include important fixes such as
+  Django 4.2.25 and 4.2.27.
+  https://www.djangoproject.com/weblog/2025/oct/01/security-releases/
+  https://www.djangoproject.com/weblog/2025/dec/02/security-releases/
+
+========================================================================
+1. TEST COMMANDS RUN
+========================================================================
+
+1. Django deployment security check:
+   Command: python manage.py check --deploy
+   Original result: FAILED with 5 production security warnings.
+   Current result after hardening: PASSED, no issues.
+
+2. Django normal project check:
+   Command: python manage.py check
+   Result: PASSED.
+
+3. Django test suite:
+   Command: python manage.py test
+   Original result: 0 tests existed.
+   Current result: apps.users security regression tests added.
+   Command: python manage.py test apps.users
+   Result: 5 tests passed.
+
+4. Dependency consistency:
+   Command: python -m pip check
+   Original result: FAILED.
+   Current result: PASSED, no broken requirements found.
+   Remediation:
+   - pandas upgraded to 2.3.3.
+   - torchaudio upgraded to 2.10.0.
+   - django-celery-beat upgraded to 2.9.0 for Django 5.2 compatibility.
+
+5. Static security scan:
+   Command:
+   rg -n "SECRET_KEY|DEBUG|ALLOWED_HOSTS|csrf|CSRF|SECURE_|SESSION_COOKIE|CSRF_COOKIE|eval\(|exec\(|subprocess|shell=True|raw\(|extra\(|cursor\(|mark_safe|safe" tapdev apps templates static
+   Result: Completed. Critical findings listed below.
+
+6. Local HTTP access-control and header checks:
+   Tested:
+   - / -> 200 OK
+   - /dashboard/ -> 302 to /auth/login/?next=/dashboard/
+   - /evidence/ -> 302 to /auth/login/?next=/evidence/
+   - /admin/ -> 302 to /admin/login/?next=/admin/
+   - /api/mobile/evidence/ -> 401 Unauthorized
+   - /not-real-security-test/ -> 404 custom branded page
+
+========================================================================
+2. CONFIRMED PASSES
+========================================================================
+
+PASS: Normal Django system check passes.
+Evidence: python manage.py check -> "System check identified no issues".
+
+PASS: Authenticated web routes redirect unauthenticated users.
+Evidence:
+- /dashboard/ returns 302 to login.
+- /evidence/ returns 302 to login.
+- /admin/ returns 302 to Django admin login.
+
+PASS: Mobile API protected evidence endpoint rejects missing Bearer token.
+Evidence:
+- /api/mobile/evidence/ returns 401 Unauthorized.
+
+PASS: Custom 404 page is active.
+Evidence:
+- /not-real-security-test/ returns 404 custom T-Vault page, not Django debug URL list.
+
+PASS: Baseline security headers are present.
+Observed on homepage:
+- X-Frame-Options: DENY
+- X-Content-Type-Options: nosniff
+- Referrer-Policy: same-origin
+- Cross-Origin-Opener-Policy: same-origin
+
+PASS: CSRF middleware is enabled globally.
+Evidence:
+- django.middleware.csrf.CsrfViewMiddleware is present in MIDDLEWARE.
+- Public/contact/auth forms include csrf_token.
+
+PASS: Registration no longer allows Admin self-selection.
+Evidence:
+- Register dropdown renders only Submitter and Analyst.
+- Backend RegisterForm role choices exclude ADMIN.
+
+PASS: Registration now requires OTP account verification.
+Evidence:
+- New registration sets user.is_active = False.
+- EMAIL_VERIFY OTP is generated.
+- User is activated only after OTP verification.
+
+PASS: Security regression tests exist and pass.
+Evidence:
+- apps/users/tests.py contains 5 tests for role restriction, route protection, API auth,
+  custom 404, and upload rejection.
+
+========================================================================
+3. CRITICAL / HIGH FINDINGS
+========================================================================
+
+F-001 CRITICAL: DEBUG is True. STATUS: FIXED.
+File: tapdev/settings.py
+Evidence: DEBUG = True
+Risk:
+- In production, DEBUG can expose stack traces, environment details, settings, route information,
+  and internal code paths.
+Standards:
+- OWASP Top 10 A05 Security Misconfiguration
+- OWASP ASVS configuration/security logging requirements
+- CSA CCM application and infrastructure security domains
+Remediation applied:
+- DEBUG is environment-driven.
+- Local runserver can remain developer-friendly; production/check mode defaults to False.
+
+F-002 CRITICAL: SECRET_KEY is hardcoded in source code. STATUS: FIXED.
+File: tapdev/settings.py
+Evidence:
+- SECRET_KEY = 'tapdev-phase2-secret-key-change-in-production-xyz-2024'
+Risk:
+- Session signing, password reset tokens, CSRF-related signing, and cryptographic trust can be
+  compromised if the repository leaks.
+Standards:
+- OWASP Top 10 A02 Cryptographic Failures
+- CSA CCM Cryptography, Encryption and Key Management
+Remediation applied:
+- SECRET_KEY now loads from DJANGO_SECRET_KEY.
+- Missing local secret is generated at runtime; production must set a persistent secret.
+
+F-003 HIGH: ALLOWED_HOSTS is wildcard. STATUS: FIXED.
+File: tapdev/settings.py
+Evidence: ALLOWED_HOSTS = ['*']
+Risk:
+- Host header attacks, cache poisoning, poisoned password reset links, and routing ambiguity.
+Standards:
+- OWASP Top 10 A05 Security Misconfiguration
+Remediation applied:
+- ALLOWED_HOSTS now loads from DJANGO_ALLOWED_HOSTS and defaults to localhost/127.0.0.1.
+
+F-004 HIGH: HTTPS hardening is missing. STATUS: FIXED IN SETTINGS.
+Command: python manage.py check --deploy
+Evidence:
+- SECURE_HSTS_SECONDS not set.
+- SECURE_SSL_REDIRECT not True.
+- SESSION_COOKIE_SECURE not True.
+- CSRF_COOKIE_SECURE not True.
+Risk:
+- Session and CSRF tokens can be exposed over non-HTTPS transport.
+Standards:
+- OWASP ASVS transport security and session management controls
+- OWASP Top 10 A02 Cryptographic Failures
+- CSA CCM Infrastructure and Virtualization Security / Application Security
+Remediation applied:
+- SECURE_SSL_REDIRECT, SESSION_COOKIE_SECURE, CSRF_COOKIE_SECURE, HSTS, HSTS preload,
+  SameSite, HttpOnly session cookie, nosniff, referrer policy and X-Frame-Options configured.
+Deployment note:
+- Real production must provide HTTPS/TLS at the proxy or app boundary.
+
+F-005 HIGH: Django version is outdated and behind known security releases. STATUS: FIXED.
+Files:
+- requirements.txt pins Django==4.2.7
+- runtime shows Django 4.2.7
+OSINT:
+- Django official security releases in 2025 include patched 4.2.x releases for SQL injection,
+  directory traversal, denial of service, and other issues.
+Risk:
+- Known vulnerabilities may affect this application depending on database backend and features used.
+Standards:
+- OWASP Top 10 A06 Vulnerable and Outdated Components
+- CSA CCM Vulnerability Management
+- CISA KEV principle: vulnerability intelligence must inform prioritization
+Remediation applied:
+- requirements.txt now specifies Django>=5.2.13,<5.3.
+- Installed runtime upgraded to Django 5.2.13.
+
+F-006 HIGH: CSRF-exempt API endpoints need stronger compensating controls. STATUS: PARTIALLY FIXED.
+Files:
+- apps/mobile_api/views.py
+- apps/iot_gateway/views.py
+Evidence:
+- @csrf_exempt appears on mobile login and several API endpoints.
+- IoT device_push is token-authenticated with X-Device-Token.
+Risk:
+- CSRF exemption can be valid for token APIs, but endpoints must enforce strict method,
+  authentication, replay resistance, rate limiting, payload size limits, content type checks,
+  and audit logging.
+Current concerns:
+- mobile_login has no rate limiting.
+- JWT secret derives from TAPDEV_CONFIG default and should be environment-backed.
+- IoT device token appears static and bearer-like; no rotation/replay nonce observed.
+Standards:
+- OWASP ASVS authentication, session, API and input validation controls
+- OWASP Top 10 A07 Identification and Authentication Failures
+Remediation applied:
+- Mobile login rate limiting added.
+- Mobile JSON content type and payload size validation added.
+- Mobile token errors are generic.
+- JWT secret now environment-backed.
+- IoT payload size/content-type validation added.
+- IoT nonce replay protection and HMAC verification added; HMAC is required in production mode.
+Remaining:
+- Add persistent API auth failure logging and token rotation UI.
+
+========================================================================
+4. MEDIUM FINDINGS
+========================================================================
+
+F-007 MEDIUM: No brute-force lockout or rate limiting confirmed for login/OTP. STATUS: FIXED.
+Evidence:
+- django-ratelimit is installed in the environment, but no decorator or middleware was found on
+  login, forgot password, or verify OTP views.
+Risk:
+- Credential stuffing and OTP brute force.
+Remediation applied:
+- Rate limits added for login, registration, forgot-password, OTP verification, and mobile login.
+
+F-008 MEDIUM: Password policy is weak. STATUS: FIXED.
+File: tapdev/settings.py
+Evidence:
+- Only MinimumLengthValidator with min_length 6 is enabled.
+Risk:
+- Weak passwords are accepted.
+Remediation applied:
+- UserAttributeSimilarityValidator, CommonPasswordValidator, NumericPasswordValidator enabled.
+- Minimum length increased to 10.
+
+F-009 MEDIUM: requirements.txt is incomplete compared with configured apps. STATUS: IMPROVED.
+File: requirements.txt
+Evidence:
+- requirements.txt contains only Django, Pillow, python-magic, django-crispy-forms.
+- Project imports/use settings for rest_framework and channels; runtime has many packages installed
+  globally, but project requirements do not reproduce the environment.
+Risk:
+- Builds are not reproducible; production may fail or run unintended package versions.
+Remediation applied:
+- requirements.txt updated with Django 5.2, DRF, Channels, PyJWT, ReportLab, django-celery-beat.
+Remaining:
+- A full minimal lockfile should still be produced before deployment.
+
+F-010 MEDIUM: Dependency consistency problems exist in the active environment. STATUS: FIXED.
+Command: python -m pip check
+Evidence:
+- pandas-ta requires pandas >= 2.3.2 but pandas 2.3.1 is installed.
+- torchaudio requires torch == 2.9.1 but torch 2.10.0 is installed.
+Risk:
+- Runtime instability in ML/AI-related features.
+Remediation applied:
+- pip check now reports no broken requirements.
+
+F-011 MEDIUM: No automated test suite currently exists. STATUS: FIXED PARTIALLY.
+Command: python manage.py test
+Evidence:
+- Found 0 tests. NO TESTS RAN.
+Risk:
+- Security fixes can regress silently.
+Remediation applied:
+- 5 security regression tests added.
+Remaining:
+- Expand tests for object-level permissions, evidence chain integrity, IoT HMAC, and OTP lockout.
+
+F-012 MEDIUM: JSON embedded with |safe should be reviewed.
+Evidence:
+- Several templates render JSON into JavaScript using |safe.
+Risk:
+- Safe rendering is acceptable only if data is produced by json.dumps/json_script style escaping.
+Required fix:
+- Prefer Django json_script or verified json.dumps with strict escaping for chart data.
+
+========================================================================
+5. LOW / INFORMATIONAL FINDINGS
+========================================================================
+
+F-013 INFO: Security headers are partially good but not complete for production.
+Present:
+- X-Frame-Options
+- X-Content-Type-Options
+- Referrer-Policy
+- Cross-Origin-Opener-Policy
+Missing/recommended:
+- Strict-Transport-Security after HTTPS
+- Content-Security-Policy
+- Permissions-Policy
+
+F-014 INFO: Local SQLite database is present.
+File: tapdev.db
+Risk:
+- Acceptable for local development; not recommended for production security/compliance.
+Required fix:
+- Use PostgreSQL or managed database in production.
+- Encrypt backups and restrict database access.
+
+F-015 INFO: OSINT breach check limitations.
+This project is running on localhost and has no public domain/IP in scope, so external exposure,
+public breach, Shodan/Censys-style internet exposure, DNS records, leaked secrets in public Git,
+and cloud bucket exposure were not tested.
+
+========================================================================
+6. BREACH / EXPOSURE NOTES
+========================================================================
+
+No live internet breach was confirmed because the tested target is local-only:
+- http://127.0.0.1:8000/
+
+Confirmed local exposure risks that would become production breaches if deployed unchanged:
+1. Hardcoded SECRET_KEY in source.
+2. DEBUG=True.
+3. ALLOWED_HOSTS=['*'].
+4. Missing HTTPS-only cookie settings.
+5. Outdated Django security patch level.
+6. No rate limiting on login/OTP endpoints.
+
+========================================================================
+7. STANDARDS MAPPING SUMMARY
+========================================================================
+
+CSA CCM v4.1:
+- Not compliant for production readiness.
+- Gaps: secret management, vulnerability management, secure configuration, IAM/rate limiting,
+  API security, secure transport, audit/testing evidence.
+
+OWASP ASVS 5.0:
+- Partial local compliance.
+- Passes: basic CSRF middleware, auth route protection, custom 404, some security headers.
+- Fails/gaps: secret management, password policy, brute-force controls, secure cookie flags,
+  HTTPS enforcement, automated security tests, dependency governance.
+
+OWASP Top 10:
+- A01 Broken Access Control: partial pass for tested protected routes; object-level access not fully tested.
+- A02 Cryptographic Failures: fail due hardcoded SECRET_KEY and missing HTTPS cookie settings.
+- A05 Security Misconfiguration: fail due DEBUG=True, wildcard ALLOWED_HOSTS, missing HSTS/SSL redirect.
+- A06 Vulnerable and Outdated Components: fail due old Django and dependency mismatch.
+- A07 Identification/Auth Failures: gap due no confirmed rate limiting and weak password policy.
+- A08 Software/Data Integrity: gap due incomplete reproducible requirements and no automated tests.
+
+CISA KEV / OSINT:
+- No public host was in scope.
+- Vulnerability management process should include KEV review and dependency advisories before release.
+
+========================================================================
+8. REQUIRED FIX PLAN BEFORE PRODUCTION
+========================================================================
+
+Priority 0 - Immediate:
+1. Move SECRET_KEY and JWT secrets to environment variables.
+2. Set DEBUG=False for production.
+3. Replace ALLOWED_HOSTS=['*'] with explicit domains.
+4. Upgrade Django to current supported security release.
+5. Add HTTPS-only settings for production.
+
+Priority 1 - Authentication hardening:
+1. Add rate limits to login, forgot password, OTP verify, mobile login.
+2. Add failed-login logging and lockout/backoff.
+3. Strengthen password validators.
+4. Ensure OTP has attempt limit and resend cooldown.
+
+Priority 2 - API hardening:
+1. Keep CSRF exemption only for true token APIs.
+2. Add replay protection for IoT device pushes.
+3. Enforce max body sizes and content types.
+4. Rotate device tokens and JWT secrets.
+
+Priority 3 - Testing:
+1. Add Django tests for auth, OTP, registration role restriction, route redirects, custom 404.
+2. Add API tests for missing/invalid Bearer token and invalid device token.
+3. Add evidence upload tests for file size/type/path traversal.
+4. Add chain integrity tests for reorder/delete/duplicate/fake timestamp scenarios.
+
+========================================================================
+9. FINAL SECURITY STATUS
+========================================================================
+
+Functional local server status: RUNNING.
+Basic Django check: PASS.
+Deployment security check: PASS.
+Security regression tests: PASS, 5 tests.
+Dependency consistency: PASS.
+Production security readiness: PARTIAL PASS.
+
+Conclusion:
+The original critical findings were remediated in code/configuration. The project is much safer
+against CSRF, basic SSRF exposure, SSTI, common SQL injection patterns, credential brute force,
+unsafe upload names/types, and missing browser security headers. It still requires real production
+secrets, HTTPS infrastructure, external penetration testing, monitoring, backups, WAF/rate-limit
+policy, and expanded automated coverage before being called production-grade.

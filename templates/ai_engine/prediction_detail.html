@@ -1,0 +1,118 @@
+{% extends 'base.html' %}
+{% block title %}Prediction #{{ pred.id }}{% endblock %}
+{% block nav_ai %}active{% endblock %}
+{% block breadcrumb %}<a href="{% url 'ai:dashboard' %}">AI Engine</a> / Prediction #{{ pred.id }}{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="card" style="margin-bottom:20px;">
+  <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;">
+    <div style="width:56px;height:56px;border-radius:var(--r-lg);background:{{ pred.risk_color }}22;border:2px solid {{ pred.risk_color }}44;display:flex;align-items:center;justify-content:center;font-size:24px;">
+      {{ pred.risk_icon }}
+    </div>
+    <div style="flex:1;min-width:0;">
+      <div style="font-size:11px;color:var(--text-3);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.1em;">AI Prediction #{{ pred.id }}</div>
+      <div style="font-size:20px;font-weight:700;font-family:var(--font-head);color:var(--text);">{{ pred.evidence.title }}</div>
+      <div style="font-size:12px;color:var(--text-2);margin-top:4px;">Evidence #{{ pred.evidence_id }} · Analyzed {{ pred.predicted_at|date:"M d, Y H:i" }}</div>
+    </div>
+    <div style="text-align:right;">
+      <span class="risk-badge {{ pred.risk_level|lower }}" style="font-size:15px;padding:6px 16px;">{{ pred.risk_icon }} {{ pred.risk_level }}</span>
+      <div style="font-size:28px;font-weight:700;font-family:var(--font-head);color:{{ pred.risk_color }};margin-top:6px;">{{ pred.anomaly_probability|floatformat:1 }}%</div>
+      <div style="font-size:11px;color:var(--text-3);">anomaly probability</div>
+    </div>
+  </div>
+</div>
+
+<div class="two-col" style="gap:20px;">
+  <div style="display:flex;flex-direction:column;gap:20px;">
+    <!-- Score breakdown -->
+    <div class="card">
+      <div class="card-header"><div class="card-title">Score Breakdown</div></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:12px;">
+        <div class="stat-card" style="text-align:center;">
+          <div class="stat-value" style="color:{{ pred.risk_color }};font-size:26px;">{{ pred.anomaly_probability|floatformat:1 }}%</div>
+          <div class="stat-label">AI Prob (RF)</div>
+        </div>
+        <div class="stat-card" style="text-align:center;">
+          <div class="stat-value" style="font-size:26px;">{{ pred.hybrid_score|floatformat:1 }}%</div>
+          <div class="stat-label">Hybrid Score</div>
+        </div>
+        <div class="stat-card" style="text-align:center;">
+          <div class="stat-value" style="color:#10b981;font-size:26px;">{{ pred.confidence|floatformat:0 }}%</div>
+          <div class="stat-label">Confidence</div>
+        </div>
+      </div>
+      <div style="margin-top:16px;display:flex;align-items:center;gap:12px;">
+        <span style="font-size:12px;color:var(--text-2);">Rule-Based Severity:</span>
+        <span class="severity-badge severity-{{ pred.rule_based_severity|lower }}">{{ pred.rule_based_severity|default:"N/A" }}</span>
+      </div>
+    </div>
+
+    <!-- AI Explanation -->
+    <div class="card">
+      <div class="card-header"><div class="card-title">🔍 AI Explanation</div></div>
+      <div class="expl-list" style="margin-top:12px;">
+        {% for e in explanation %}
+        <div class="expl-card {{ e.severity }}">
+          <div class="expl-factor">{{ e.factor }}<span class="expl-weight">weight: {{ e.weight }}</span></div>
+          <div class="expl-desc">{{ e.description }}</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Detected Patterns -->
+    {% if patterns %}
+    <div class="card">
+      <div class="card-header"><div class="card-title">⚡ Detected Attack Patterns</div></div>
+      <div class="pattern-tags" style="margin-top:12px;">
+        {% for p in patterns %}
+        <span class="pattern-tag" style="font-size:12px;padding:4px 12px;">{{ p|cut:"_"|title }}</span>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:20px;">
+    <!-- Feature vector -->
+    <div class="card">
+      <div class="card-header"><div class="card-title">Feature Vector (Top 12)</div></div>
+      <div class="feat-list" style="margin-top:10px;">
+        {% for f in feature_detail %}
+        <div class="feat-row">
+          <div class="feat-name" title="{{ f.name }}">{{ f.name|truncatechars:24 }}</div>
+          <div class="feat-bar-wrap">
+            <div class="feat-bar-fill" style="width:{{ f.importance|floatformat:0 }}0%;opacity:{% if f.importance > 0.05 %}1{% else %}0.4{% endif %};"></div>
+          </div>
+          <div class="feat-val">{{ f.value }}</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Event chain summary -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Event Chain</div>
+        <a href="{% url 'evidence:detail' pred.evidence_id %}" class="btn btn-ghost" style="font-size:12px;">View Full →</a>
+      </div>
+      <div class="mini-timeline" style="margin-top:8px;">
+        {% for e in events|slice:":8" %}
+        <div class="mt-event">
+          <div class="mt-dot" style="background:{{ e.color }};"></div>
+          <div class="mt-body">
+            <div class="mt-type" style="color:{{ e.color }};">{{ e.event_type }}</div>
+            <div class="mt-desc">{{ e.description|default:"No description"|truncatechars:50 }}</div>
+            <div class="mt-time">{{ e.timestamp|date:"M d, Y H:i" }}</div>
+          </div>
+        </div>
+        {% endfor %}
+        {% if events|length > 8 %}
+        <div style="font-size:11px;color:var(--text-3);padding:8px 0;">+ {{ events|length|add:"-8" }} more events</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

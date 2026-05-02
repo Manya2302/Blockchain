@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% block title %}Contribute Signature{% endblock %}
+{% block nav_tshare %}active{% endblock %}
+{% block breadcrumb %}<a href="{% url 'threat_sharing:hub' %}">Threat Hub</a> / Contribute Signature{% endblock %}
+{% block content %}
+<div style="max-width:600px;margin:0 auto;">
+<div class="card">
+  <div class="card-header"><div class="card-title">🛡 Contribute Threat Signature</div></div>
+  <div style="background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.15);border-radius:var(--r-md);padding:12px;margin:14px 0;font-size:12px;color:var(--text-2);">
+    Your IOC value is hashed before submission — the actual indicator is never stored. Your organization identity can be anonymized. All signatures are shared in STIX 2.1 format with the global consortium.
+  </div>
+  <form method="post">{% csrf_token %}
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div class="form-group"><label class="form-label">Threat Class</label>
+        <select name="threat_class" class="form-control">{% for val,lbl in threat_classes %}<option value="{{ val }}">{{ lbl }}</option>{% endfor %}</select></div>
+      <div class="form-group"><label class="form-label">IOC Type</label>
+        <select name="ioc_type" class="form-control">
+          <option value="hash">File Hash (SHA-256)</option>
+          <option value="ip">IP Address</option>
+          <option value="domain">Domain Name</option>
+          <option value="pattern">Behavioral Pattern</option>
+          <option value="signature">Binary Signature</option>
+        </select></div>
+    </div>
+    <div class="form-group"><label class="form-label">IOC Value (will be hashed)</label><input name="ioc_value" class="form-control" placeholder="e.g. abc123def456... or 192.168.1.100" required></div>
+    <div class="form-group"><label class="form-label">Description</label><textarea name="description" class="form-control" rows="3" placeholder="Describe the threat behavior, context, and impact..."></textarea></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div class="form-group"><label class="form-label">Confidence</label>
+        <select name="confidence" class="form-control">{% for val,lbl in confidence_levels %}<option value="{{ val }}">{{ lbl }}</option>{% endfor %}</select></div>
+      <div class="form-group"><label class="form-label">Severity</label>
+        <select name="severity" class="form-control">
+          <option>CRITICAL</option><option>HIGH</option><option selected>MEDIUM</option><option>LOW</option>
+        </select></div>
+    </div>
+    <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;margin:8px 0;">
+      <input type="checkbox" name="anonymous" value="1" checked style="accent-color:var(--accent);">
+      Submit anonymously (recommended)
+    </label>
+    <button type="submit" class="btn btn-primary" style="width:100%;margin-top:8px;">🛡 Submit to Global Consortium</button>
+  </form>
+</div>
+</div>
+{% endblock %}

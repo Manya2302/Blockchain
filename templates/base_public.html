@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  {% load static %}
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>{% block title %}TAP-DEV{% endblock %} — Temporal Attack-Proof Digital Evidence Vault</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/tapdev.css' %}">
+</head>
+<body class="public-layout">
+<nav class="navbar">
+  <a href="{% url 'home:landing' %}" class="navbar-brand">
+    <span class="navbar-hex">⬡</span>
+    <span class="navbar-name">TAP-DEV</span>
+  </a>
+  <div class="navbar-links">
+    <a href="{% url 'home:landing' %}" class="navbar-link {% if request.resolver_match.url_name == 'landing' %}active{% endif %}">Home</a>
+    <a href="{% url 'home:about' %}"   class="navbar-link {% if request.resolver_match.url_name == 'about' %}active{% endif %}">About</a>
+    <a href="{% url 'home:contact' %}" class="navbar-link {% if request.resolver_match.url_name == 'contact' %}active{% endif %}">Contact</a>
+  </div>
+  <div class="navbar-cta">
+    <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" title="Toggle theme">☀</button>
+    {% if user.is_authenticated %}
+    <a href="{% url 'dashboard:home' %}" class="btn btn-primary btn-sm">Dashboard →</a>
+    {% else %}
+    <a href="{% url 'users:login' %}" class="btn btn-ghost btn-sm">Sign In</a>
+    <a href="{% url 'users:register' %}" class="btn btn-primary btn-sm">Get Started</a>
+    {% endif %}
+  </div>
+</nav>
+{% if messages %}<div class="flash-stack">{% for m in messages %}<div class="flash flash-{{ m.tags }}">{% if 'success' in m.tags %}✓{% elif 'error' in m.tags %}✕{% else %}◈{% endif %} {{ m }}<button class="flash-close" onclick="this.parentElement.remove()">×</button></div>{% endfor %}</div>{% endif %}
+{% block content %}{% endblock %}
+<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-brand"><span class="footer-hex">⬡</span><span class="footer-name">TAP-DEV</span></div>
+    <div class="footer-links">
+      <a href="{% url 'home:landing' %}" class="footer-link">Home</a>
+      <a href="{% url 'home:about' %}"   class="footer-link">About</a>
+      <a href="{% url 'home:contact' %}" class="footer-link">Contact</a>
+      <a href="{% url 'users:login' %}"  class="footer-link">Sign In</a>
+    </div>
+    <div class="footer-copy">© 2024 TAP-DEV · Phase 2 — Blockchain + IPFS + AI Ready</div>
+  </div>
+</footer>
+<script src="{% static 'js/tapdev.js' %}"></script>
+</body>
+</html>

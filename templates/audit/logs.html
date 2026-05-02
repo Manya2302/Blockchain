@@ -1,0 +1,26 @@
+{% extends 'base.html' %}{% block title %}Audit Logs{% endblock %}
+{% block breadcrumb %}<strong>Audit Logs</strong>{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div><h1 class="page-title">Audit Logs</h1><p class="page-sub">{{ logs|length }} entries{% if not request.user.profile.is_admin %} (your activity){% endif %}</p></div>
+</div>
+<div class="filter-bar"><form method="get" class="filter-form">
+  <input type="text" name="q" value="{{ search }}" class="form-input filter-search" placeholder="Search actions…">
+  <select name="category" class="form-input filter-select" onchange="this.form.submit()">
+    <option value="">All Categories</option>
+    {% for val,label in categories %}<option value="{{ val }}" {% if category == val %}selected{% endif %}>{{ label }}</option>{% endfor %}
+  </select>
+  <button type="submit" class="btn btn-ghost">Filter</button>
+  {% if search or category %}<a href="{% url 'audit:logs' %}" class="btn btn-ghost">Clear</a>{% endif %}
+</form></div>
+<div class="card">
+  {% for log in logs %}
+  <div class="audit-row">
+    <span class="audit-cat cat-{{ log.category|lower }}">{{ log.category }}</span>
+    {% if request.user.profile.is_admin %}<span class="audit-user">{{ log.user.username|default:"system" }}</span>{% endif %}
+    <span class="audit-action">{{ log.action }}{% if log.detail %} — <span class="text-dim">{{ log.detail|truncatechars:50 }}</span>{% endif %}</span>
+    {% if log.ip_address %}<span class="mono-sm text-dim" style="flex-shrink:0">{{ log.ip_address }}</span>{% endif %}
+    <span class="audit-time">{{ log.timestamp|date:"M d, Y H:i:s" }}</span>
+  </div>
+  {% empty %}<div class="empty-state"><p>No log entries found.</p></div>{% endfor %}
+</div>{% endblock %}

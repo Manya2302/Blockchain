@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+{% block title %}Version Comparison{% endblock %}
+{% block nav_evolution %}active{% endblock %}
+{% block breadcrumb %}<a href="{% url 'evolution:dashboard' %}">Evolution Tracker</a> / Compare{% endblock %}
+
+{% block content %}
+<div class="page-header" style="margin-bottom:20px;">
+  <div class="page-header-left">
+    <div class="page-title">Document Version Comparison</div>
+    <div class="page-subtitle">v{{ ev1.version }} → v{{ ev2.version }} · Fraud Analysis Complete</div>
+  </div>
+</div>
+
+<!-- Fraud Score Hero -->
+<div class="card" style="margin-bottom:20px;{% if doc_version.fraud_score > 0.5 %}border-color:rgba(239,68,68,.4);{% endif %}">
+  <div style="display:flex;align-items:center;gap:24px;flex-wrap:wrap;">
+    <div class="fraud-meter" style="flex-shrink:0;">
+      <div style="font-size:11px;color:var(--text-3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;">Fraud Score</div>
+      <div class="fraud-score-num" style="color:{% if doc_version.fraud_score > 0.5 %}#ef4444{% elif doc_version.fraud_score > 0.25 %}#f59e0b{% else %}#10b981{% endif %};">{{ doc_version.fraud_percent }}%</div>
+      <div style="height:6px;background:var(--bg-3);border-radius:3px;overflow:hidden;margin-top:8px;width:120px;">
+        <div style="height:100%;background:{% if doc_version.fraud_score > 0.5 %}#ef4444{% elif doc_version.fraud_score > 0.25 %}#f59e0b{% else %}#10b981{% endif %};width:{{ doc_version.fraud_percent }}%;border-radius:3px;"></div>
+      </div>
+    </div>
+
+    <div style="flex:1;min-width:200px;">
+      <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:12px;">
+        Classification: <span style="color:{% if doc_version.change_type == 'CRITICAL' %}#dc2626{% elif doc_version.change_type == 'FORGED' %}#ef4444{% elif doc_version.change_type == 'MAJOR' %}#f59e0b{% else %}#10b981{% endif %};">{{ doc_version.change_type }}</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;">
+        <div class="stat-card" style="padding:10px;text-align:center;"><div class="stat-value" style="font-size:18px;">{{ doc_version.text_similarity|floatformat:0 }}%</div><div class="stat-label">Similarity</div></div>
+        <div class="stat-card" style="padding:10px;text-align:center;"><div class="stat-value" style="font-size:18px;color:#10b981;">+{{ doc_version.words_added }}</div><div class="stat-label">Words Added</div></div>
+        <div class="stat-card" style="padding:10px;text-align:center;"><div class="stat-value" style="font-size:18px;color:#ef4444;">-{{ doc_version.words_removed }}</div><div class="stat-label">Removed</div></div>
+        <div class="stat-card" style="padding:10px;text-align:center;"><div class="stat-value" style="font-size:18px;{% if doc_version.hash_changed %}color:#ef4444;{% else %}color:#10b981;{% endif %};">{% if doc_version.hash_changed %}⚠{% else %}✓{% endif %}</div><div class="stat-label">Hash Changed</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="two-col" style="gap:20px;">
+  <!-- Fraud Signals -->
+  <div class="card">
+    <div class="card-header"><div class="card-title">⚠ Fraud Signals Detected</div></div>
+    {% if result.fraud_signals %}
+    <div class="fraud-signals" style="margin-top:12px;">
+      {% for sig in result.fraud_signals %}
+      <div class="fraud-signal {{ sig.severity }}">
+        <div class="signal-label">{{ sig.label }}</div>
+        <div class="signal-detail">{{ sig.detail }}</div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div style="padding:20px;text-align:center;color:var(--text-3);font-size:13px;">✓ No significant fraud signals detected</div>
+    {% endif %}
+  </div>
+
+  <!-- Version metadata -->
+  <div style="display:flex;flex-direction:column;gap:16px;">
+    <div class="card">
+      <div class="card-header"><div class="card-title">Version A (Original)</div></div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:10px;">
+        <div style="display:flex;justify-content:space-between;font-size:13px;"><span style="color:var(--text-2);">Version</span><strong>v{{ ev1.version }}</strong></div>
+        <div style="display:flex;justify-content:space-between;font-size:13px;"><span style="color:var(--text-2);">Title</span><span>{{ ev1.title|truncatechars:30 }}</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:13px;"><span style="color:var(--text-2);">SHA-256</span><span style="font-family:var(--font-mono);font-size:10px;">{{ ev1.sha256_hash|truncatechars:20 }}</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:13px;"><span style="color:var(--text-2);">Size</span><span>{{ ev1.file_size_display }}</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:13px;"><span style="color:var(--text-2);">Date</span><span>{{ ev1.created_at|date:"M d, Y" }}</span></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><div class="card-title">Version B (Revised)</div></div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:10px;">
+        <div style="display:flex;justify-content:space-between;font-size:13px;"><span style="color:var(--text-2);">Version</span><strong style="color:var(--accent);">v{{ ev2.version }}</strong></div>
+        <div style="display:flex;justify-content:space-between;font-size:13px;"><span style="color:var(--text-2);">Title</span><span>{{ ev2.title|truncatechars:30 }}</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:13px;"><span style="color:var(--text-2);">SHA-256</span><span style="font-family:var(--font-mono);font-size:10px;color:{% if doc_version.hash_changed %}#ef4444{% else %}#10b981{% endif %};">{{ ev2.sha256_hash|truncatechars:20 }}</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:13px;"><span style="color:var(--text-2);">Size Delta</span><span style="color:{% if doc_version.file_size_delta < 0 %}#ef4444{% else %}#10b981{% endif %};">{% if doc_version.file_size_delta >= 0 %}+{% endif %}{{ doc_version.file_size_delta }} B</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:13px;"><span style="color:var(--text-2);">Date</span><span>{{ ev2.created_at|date:"M d, Y" }}</span></div>
+      </div>
+    </div>
+
+    <a href="{% url 'evidence:detail' ev2.id %}" class="btn btn-primary">View Full Evidence →</a>
+  </div>
+</div>
+
+<!-- Diff summary -->
+{% if result.diff_summary %}
+<div class="card" style="margin-top:20px;">
+  <div class="card-header"><div class="card-title">Diff Summary</div></div>
+  <div class="sim-log" style="background:var(--bg-2);color:#94a3b8;margin-top:10px;">{{ result.diff_summary }}</div>
+</div>
+{% endif %}
+{% endblock %}

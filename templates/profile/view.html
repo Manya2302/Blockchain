@@ -1,0 +1,42 @@
+{% extends 'base.html' %}{% block title %}My Profile{% endblock %}{% block nav_dash %}active{% endblock %}
+{% block breadcrumb %}Profile / <strong>{{ request.user.username }}</strong>{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div><h1 class="page-title">My Profile</h1><p class="page-sub">Account details and activity</p></div>
+  <div class="header-actions">
+    <a href="{% url 'users:change_password' %}" class="btn btn-ghost btn-sm">Change Password</a>
+    <a href="{% url 'profile:edit' %}" class="btn btn-primary">Edit Profile</a>
+  </div>
+</div>
+<div class="profile-header">
+  <div class="profile-avatar-lg">
+    {% if request.user.profile.profile_image %}<img src="{{ request.user.profile.profile_image.url }}" alt="">{% else %}{{ request.user.profile.get_avatar_initials }}{% endif %}
+  </div>
+  <div class="profile-info">
+    <div class="profile-name">{{ request.user.get_full_name|default:request.user.username }}</div>
+    <div class="profile-role" style="margin-top:6px"><span class="role-badge role-{{ request.user.profile.role|lower }}">{{ request.user.profile.role }}</span></div>
+    <div class="profile-meta">
+      {% if request.user.profile.organization %}<div class="pm-item">🏢 {{ request.user.profile.organization }}</div>{% endif %}
+      {% if request.user.profile.department %}<div class="pm-item">◈ {{ request.user.profile.department }}</div>{% endif %}
+      {% if request.user.email %}<div class="pm-item">✉ {{ request.user.email }}</div>{% endif %}
+      <div class="pm-item text-dim">Joined {{ request.user.date_joined|date:"M d, Y" }}</div>
+    </div>
+  </div>
+</div>
+<div class="two-col">
+  <div>
+    <div class="stats-grid stats-grid-3" style="margin-bottom:20px">
+      <div class="stat-card green-border"><div class="stat-num">{{ ev_count }}</div><div class="stat-label">Evidence</div></div>
+      <div class="stat-card accent-border"><div class="stat-num">{{ event_count }}</div><div class="stat-label">Events</div></div>
+      <div class="stat-card"><div class="stat-num">{{ request.user.profile.role }}</div><div class="stat-label">Role</div></div>
+    </div>
+    <div class="card"><div class="card-head"><h2 class="card-title">Recent Evidence</h2><a href="{% url 'evidence:list' %}" class="card-link">All →</a></div>
+      {% for ev in evidences %}<a href="{% url 'evidence:detail' ev.pk %}" style="display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);color:var(--text);align-items:center;"><div style="flex:1"><div class="fw-500" style="font-size:13px">{{ ev.title|truncatechars:30 }}</div><div class="text-xs text-dim">{{ ev.created_at|date:"M d, Y" }}</div></div><span class="status-badge {{ ev.get_status_class }}">{{ ev.status }}</span><span class="trust-chip {{ ev.get_trust_class }}">{{ ev.trust_score }}</span></a>
+      {% empty %}<div class="empty-state"><p>No evidence submitted yet.</p></div>{% endfor %}
+    </div>
+  </div>
+  <div class="card"><div class="card-head"><h2 class="card-title">Recent Activity</h2><a href="{% url 'audit:logs' %}" class="card-link">All logs →</a></div>
+    {% for log in recent_logs %}<div class="audit-row"><span class="audit-cat cat-{{ log.category|lower }}">{{ log.category }}</span><span class="audit-action">{{ log.action }}</span><span class="audit-time">{{ log.timestamp|date:"M d H:i" }}</span></div>
+    {% empty %}<div class="empty-state"><p>No activity recorded.</p></div>{% endfor %}
+  </div>
+</div>{% endblock %}

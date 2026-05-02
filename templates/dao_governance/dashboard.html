@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+{% block title %}DAO Governance{% endblock %}
+{% block nav_dao %}active{% endblock %}
+{% block breadcrumb %}DAO Governance Protocol{% endblock %}
+{% block content %}
+<div class="p5-hero">
+  <div class="p5-hero-label">Phase 5 · Decentralized Autonomous Organization · On-Chain Voting</div>
+  <div class="p5-hero-title">🏛 DAO Governance Protocol</div>
+  <div class="p5-hero-sub">Consortium-wide protocol governance · Supermajority voting · On-chain execution · Transparent treasury</div>
+</div>
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;">
+  <div class="p5-stat"><div class="p5-stat-val" style="color:#8b5cf6;">{{ active }}</div><div class="p5-stat-label">Active Votes</div></div>
+  <div class="p5-stat"><div class="p5-stat-val" style="color:#10b981;">{{ passed }}</div><div class="p5-stat-label">Passed</div></div>
+  <div class="p5-stat"><div class="p5-stat-val" style="color:#a78bfa;">{{ my_votes }}</div><div class="p5-stat-label">My Votes Cast</div></div>
+</div>
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+  <h2 style="font-size:14px;font-weight:600;color:var(--text);">Governance Proposals</h2>
+  <a href="{% url 'dao_governance:create' %}" class="btn btn-primary btn-sm" style="background:linear-gradient(135deg,#7c3aed,#4f46e5);">+ Submit Proposal</a>
+</div>
+<div style="display:flex;flex-direction:column;gap:12px;">
+  {% for proposal in proposals %}
+  <div class="proposal-card {{ proposal.status }}">
+    <div style="display:flex;align-items:flex-start;gap:12px;">
+      <div style="flex:1;min-width:0;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap;">
+          <span class="inv-type-badge">{{ proposal.get_proposal_type_display }}</span>
+          <span class="dao-status {{ proposal.status }}">{{ proposal.status }}</span>
+          {% if proposal.on_chain_hash %}
+          <span style="font-family:var(--font-mono);font-size:9px;color:var(--text-3);">{{ proposal.on_chain_hash|truncatechars:14 }}</span>
+          {% endif %}
+        </div>
+        <div style="font-size:15px;font-weight:700;color:var(--text);">{{ proposal.title }}</div>
+        <div style="font-size:12px;color:var(--text-2);margin-top:4px;">{{ proposal.description|truncatechars:120 }}</div>
+        <div style="margin-top:10px;">
+          <div class="vote-bar-row">
+            <span class="vote-label">For</span>
+            <div class="vote-bar"><div class="vote-bar-fill" style="width:{% if proposal.total_votes > 0 %}{% widthratio proposal.votes_for proposal.total_votes 100 %}{% else %}0{% endif %}%;background:#10b981;"></div></div>
+            <span class="vote-count" style="color:#10b981;">{{ proposal.votes_for }}</span>
+          </div>
+          <div class="vote-bar-row">
+            <span class="vote-label">Against</span>
+            <div class="vote-bar"><div class="vote-bar-fill" style="width:{% if proposal.total_votes > 0 %}{% widthratio proposal.votes_against proposal.total_votes 100 %}{% else %}0{% endif %}%;background:#ef4444;"></div></div>
+            <span class="vote-count" style="color:#ef4444;">{{ proposal.votes_against }}</span>
+          </div>
+          <div class="vote-bar-row">
+            <span class="vote-label">Abstain</span>
+            <div class="vote-bar"><div class="vote-bar-fill" style="width:{% if proposal.total_votes > 0 %}{% widthratio proposal.votes_abstain proposal.total_votes 100 %}{% else %}0{% endif %}%;background:#6b7280;"></div></div>
+            <span class="vote-count" style="color:var(--text-3);">{{ proposal.votes_abstain }}</span>
+          </div>
+        </div>
+        <div style="font-size:11px;color:var(--text-3);margin-top:6px;">
+          Approval: <strong style="color:{% if proposal.approval_rate >= 67 %}#10b981{% else %}#ef4444{% endif %};">{{ proposal.approval_rate }}%</strong>
+          · Total: {{ proposal.total_votes }} votes
+          · Ends: {{ proposal.voting_end|date:"M d, Y"|default:"Open" }}
+        </div>
+      </div>
+      <a href="{% url 'dao_governance:proposal' proposal.id %}" class="btn btn-ghost btn-sm" style="flex-shrink:0;">Vote →</a>
+    </div>
+  </div>
+  {% empty %}
+  <div class="card" style="text-align:center;padding:40px;">
+    <div style="font-size:40px;">🏛</div>
+    <div style="font-size:16px;font-weight:600;margin-top:12px;">No proposals yet</div>
+    <a href="{% url 'dao_governance:create' %}" class="btn btn-primary" style="margin-top:12px;">Submit First Proposal</a>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

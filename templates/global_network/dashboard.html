@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+{% block title %}Global Forensic Network{% endblock %}
+{% block nav_gnet %}active{% endblock %}
+{% block extra_head %}<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>{% endblock %}
+{% block breadcrumb %}Global Forensic Network{% endblock %}
+{% block content %}
+<div class="p5-hero">
+  <div class="p5-hero-label">Phase 5 · Cross-Chain Forensic Network</div>
+  <div class="p5-hero-title">🌐 Global Decentralized Forensic Network</div>
+  <div class="p5-hero-sub">Ethereum · Polygon · Hyperledger · Solana · Avalanche — Cross-chain evidence bridging via IBC protocol</div>
+</div>
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;">
+  <div class="p5-stat"><div class="p5-stat-val">{{ stats.total_nodes }}</div><div class="p5-stat-label">Network Nodes</div></div>
+  <div class="p5-stat"><div class="p5-stat-val" style="color:#10b981;">{{ stats.active }}</div><div class="p5-stat-label">Active Nodes</div></div>
+  <div class="p5-stat"><div class="p5-stat-val" style="color:#f59e0b;">{{ stats.pending }}</div><div class="p5-stat-label">Pending Transfers</div></div>
+  <div class="p5-stat"><div class="p5-stat-val" style="color:#10b981;">{{ stats.confirmed }}</div><div class="p5-stat-label">Confirmed Transfers</div></div>
+</div>
+<div style="display:grid;grid-template-columns:2fr 1fr;gap:20px;margin-bottom:20px;">
+  <div class="card">
+    <div class="card-header"><div class="card-title">🗺 Network Globe — D3 Force Graph</div>
+      <a href="{% url 'global_network:register_node' %}" class="btn btn-primary btn-sm">+ Register Node</a></div>
+    <svg id="netGraph" style="width:100%;height:400px;background:radial-gradient(ellipse at 50% 50%,rgba(0,212,255,.03) 0%,transparent 70%);border-radius:var(--r-md);margin-top:10px;"></svg>
+  </div>
+  <div class="card">
+    <div class="card-header"><div class="card-title">Chain Distribution</div></div>
+    <canvas id="chainChart" height="180" style="margin-top:12px;"></canvas>
+    <div style="margin-top:16px;display:flex;flex-direction:column;gap:6px;">
+      {% for node in nodes|slice:":6" %}
+      <div class="node-card">
+        <div class="node-flag">{% if node.country_code == "US" %}🇺🇸{% elif node.country_code == "UK" %}🇬🇧{% elif node.country_code == "DE" %}🇩🇪{% elif node.country_code == "JP" %}🇯🇵{% elif node.country_code == "AU" %}🇦🇺{% elif node.country_code == "FR" %}🇫🇷{% else %}🏳{% endif %}</div>
+        <div style="flex:1;min-width:0;"><div style="font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ node.name }}</div>
+          <div style="font-size:10px;color:var(--text-3);">{{ node.country_name }} · {{ node.get_node_type_display }}</div></div>
+        <span class="chain-pill chain-badge-{{ node.blockchain|lower|slice:':3' }}">{{ node.blockchain }}</span>
+        <div style="width:8px;height:8px;border-radius:50%;background:{{ node.status_color }};flex-shrink:0;"></div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+<div class="card">
+  <div class="card-header"><div class="card-title">⛓ Cross-Chain Evidence Transfers</div></div>
+  <div style="display:flex;flex-direction:column;gap:4px;margin-top:10px;">
+    {% for t in transfers %}
+    <div class="transfer-row">
+      <div style="font-size:11px;color:var(--text-3);font-family:var(--font-mono);flex-shrink:0;width:80px;">{{ t.initiated_at|date:"M d H:i" }}</div>
+      <div class="cross-chain-arrow">
+        <span style="color:var(--accent);">{{ t.source_chain }}</span>
+        <span style="color:var(--text-3);">→</span>
+        <span style="color:#a78bfa;">{{ t.target_chain }}</span>
+      </div>
+      <div style="flex:1;font-size:12px;color:var(--text-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ t.evidence.title|truncatechars:35 }}</div>
+      <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-3);">{{ t.source_tx_hash|truncatechars:14 }}</div>
+      <span class="transfer-status {{ t.status }}">{{ t.status }}</span>
+    </div>
+    {% empty %}
+    <div style="padding:20px;text-align:center;color:var(--text-3);font-size:13px;">No cross-chain transfers yet.</div>
+    {% endfor %}
+  </div>
+</div>
+<script>
+const nodes = {{ node_geo_json|safe }};
+const chainData = {{ chain_dist_json|safe }};
+const chainColors = {"ETHEREUM":"#818cf8","POLYGON":"#a78bfa","HYPERLEDGER":"#06b6d4","SOLANA":"#10b981","AVALANCHE":"#f59e0b","COSMOS":"#00d4ff"};
+new Chart(document.getElementById('chainChart'),{type:'doughnut',data:{labels:Object.keys(chainData),datasets:[{data:Object.values(chainData),backgroundColor:Object.keys(chainData).map(k=>(chainColors[k]||'#6b7280')+'33'),borderColor:Object.keys(chainData).map(k=>chainColors[k]||'#6b7280'),borderWidth:2}]},options:{responsive:true,plugins:{legend:{labels:{color:'#94a3b8',font:{size:10}}}}}});
+const svg = d3.select('#netGraph');
+const W = parseInt(svg.style('width')), H = 400;
+svg.attr('viewBox',`0 0 ${W} ${H}`);
+const sim = d3.forceSimulation(nodes)
+  .force('charge',d3.forceManyBody().strength(-60))
+  .force('center',d3.forceCenter(W/2,H/2))
+  .force('collision',d3.forceCollide().radius(28));
+const g = svg.append('g');
+const node = g.selectAll('g').data(nodes).join('g').call(d3.drag().on('start',(e,d)=>{if(!e.active)sim.alphaTarget(.3).restart();d.fx=d.x;d.fy=d.y}).on('drag',(e,d)=>{d.fx=e.x;d.fy=e.y}).on('end',(e,d)=>{if(!e.active)sim.alphaTarget(0);d.fx=null;d.fy=null}));
+node.append('circle').attr('r',18).attr('fill',d=>(chainColors[d.blockchain]||'#6b7280')+'22').attr('stroke',d=>chainColors[d.blockchain]||'#6b7280').attr('stroke-width',1.5);
+node.append('text').text(d=>d.country_code||'??').attr('text-anchor','middle').attr('dominant-baseline','central').attr('font-size',10).attr('fill','#e2e8f0').attr('font-weight','700');
+node.append('text').text(d=>d.name.substring(0,12)).attr('text-anchor','middle').attr('dy',28).attr('font-size',8).attr('fill','#64748b');
+sim.on('tick',()=>node.attr('transform',d=>`translate(${d.x},${d.y})`));
+const zoom = d3.zoom().scaleExtent([0.3,3]).on('zoom',e=>g.attr('transform',e.transform));
+svg.call(zoom);
+</script>
+{% endblock %}
