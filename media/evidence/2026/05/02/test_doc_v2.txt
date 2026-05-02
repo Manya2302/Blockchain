@@ -1,1 +1,0 @@
-This is a secretly altered document for TAP-DEV testing. Adding malicious keywords like 'fraud', 'bribe'.
