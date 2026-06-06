@@ -1,9 +1,0 @@
-Watching for file changes with StatReloader
-[01/May/2026 12:19:34] "GET / HTTP/1.1" 200 5494
-[01/May/2026 12:19:34] "GET /auth/login/ HTTP/1.1" 200 2332
-[01/May/2026 12:19:34] "GET /auth/register/ HTTP/1.1" 200 3905
-[01/May/2026 12:19:34] "GET /dashboard/ HTTP/1.1" 302 0
-Unauthorized: /api/mobile/evidence/
-[01/May/2026 12:19:34] "GET /api/mobile/evidence/ HTTP/1.1" 401 33
-Not Found: /not-real-security-test/
-[01/May/2026 12:19:34] "GET /not-real-security-test/ HTTP/1.1" 404 663
